@@ -26,9 +26,11 @@ def rng_state() -> dict[str, Any]:
 def restore_rng_state(state: dict[str, Any]) -> None:
     random.setstate(state["python_global"])
     np.random.set_state(state["numpy_global"])
-    torch.set_rng_state(state["torch_cpu"])
+    # `load_checkpoint` may map_location every tensor (including RNG state) onto the
+    # training device, but torch.set_rng_state/cuda.set_rng_state_all require CPU tensors.
+    torch.set_rng_state(state["torch_cpu"].cpu())
     if "torch_cuda" in state and torch.cuda.is_available():
-        torch.cuda.set_rng_state_all(state["torch_cuda"])
+        torch.cuda.set_rng_state_all([tensor.cpu() for tensor in state["torch_cuda"]])
 
 
 def save_checkpoint(path: str | Path, payload: dict[str, Any]) -> None:
