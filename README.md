@@ -99,6 +99,20 @@ Greedy evaluation uses epsilon exactly zero:
 ./scripts/play_latest.sh --run-id RUN_ID --episodes 5 --fps 25 --seed 2000007
 ```
 
+For an unlocked graphical selector, use AI Arcade:
+
+```sh
+./scripts/ai_arcade.sh
+./scripts/ai_arcade.sh --run-id RUN_ID
+```
+
+AI Arcade presents every Easy, Medium, and Pro track and all four bike leagues without changing
+normal-game save data. Choose the level, track, league, playback FPS, and episode count with the
+arrow keys, select **START AI**, and the policy drives. Escape during playback returns to the
+selector; Escape in the selector exits. After a configured episode batch finishes, the selector
+also reopens. This is a separate native mode owned by this training repository; the Gravity Lab
+submodule remains unmodified.
+
 Playback can explicitly override `--group`, `--track`, or `--league`. Otherwise it uses the saved
 training configuration. With `frame_skip=2`, playback defaults to 25 FPS so displayed agent steps
 roughly follow simulated real time. The viewer runs as a separate OS process and greedily loads an

@@ -31,15 +31,18 @@ esac
 BUILD_DIR=$GAME_REPO/build-classic-rl
 LIBRARY=${GRAVITY_LAB_CLASSIC_LIBRARY:-$BUILD_DIR/$LIBRARY_NAME}
 VIEWER=$BUILD_DIR/gravity_lab_classic_viewer
-if [ ! -f "$LIBRARY" ] || [ ! -x "$VIEWER" ]; then
+ARCADE=$BUILD_DIR/gravity_lab_ai_arcade
+if [ "$GAME_REPO" = "$ROOT/gravity-lab" ] && { [ ! -f "$LIBRARY" ] || [ ! -x "$VIEWER" ] || [ ! -x "$ARCADE" ]; }; then
   if ! command -v cmake >/dev/null 2>&1; then
     echo "CMake is required to build Gravity Lab. Install the prerequisites listed in README.md." >&2
     exit 1
   fi
   echo "Building the Gravity Lab classic native library and viewer..."
-  cmake -S "$GAME_REPO" -B "$BUILD_DIR" \
-    -DGRAVITY_LAB_BUILD_CLASSIC=ON \
-    -DGRAVITY_LAB_BUILD_DESKTOP=OFF
+  cmake -S "$ROOT" -B "$ROOT/build-native"
+  cmake --build "$ROOT/build-native" --config Release
+elif [ ! -f "$LIBRARY" ] || [ ! -x "$VIEWER" ]; then
+  echo "Building the overridden Gravity Lab checkout..."
+  cmake -S "$GAME_REPO" -B "$BUILD_DIR" -DGRAVITY_LAB_BUILD_CLASSIC=ON -DGRAVITY_LAB_BUILD_DESKTOP=OFF
   cmake --build "$BUILD_DIR" --config Release
 fi
 
@@ -56,6 +59,11 @@ if [ ! -x "$VIEWER" ]; then
   echo "Graphical viewer missing or not executable: $VIEWER" >&2
   exit 1
 fi
+if [ "$GAME_REPO" = "$ROOT/gravity-lab" ] && [ ! -x "$ARCADE" ]; then
+  echo "AI arcade executable missing: $ARCADE" >&2
+  exit 1
+fi
 echo "Setup complete."
 echo "Run: ./scripts/train_one_minute.sh"
 echo "Then: ./scripts/play_latest.sh"
+echo "AI track selector: ./scripts/ai_arcade.sh"

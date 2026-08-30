@@ -54,6 +54,14 @@ def require_integration(require_viewer: bool = True) -> tuple[Path, Path, Path]:
     return package, library, viewer
 
 
+def arcade_executable() -> Path:
+    candidate = integration_paths()[2].parent / ("gravity_lab_ai_arcade.exe" if platform.system() == "Windows"
+                                                  else "gravity_lab_ai_arcade")
+    if not candidate.is_file():
+        raise RuntimeError(f"AI arcade executable is missing: {candidate}\nRun scripts/bootstrap.sh to build it.")
+    return candidate
+
+
 def play(run_id: str | None = None, checkpoint: str | Path | None = None, episodes: int = 5,
          group: int | None = None, track: int | None = None, league: int | None = None,
          fps: int | None = None, seed: int | None = None, validate_only: bool = False,
@@ -80,4 +88,22 @@ def play(run_id: str | None = None, checkpoint: str | Path | None = None, episod
                  "--seed", str(saved["config"]["seeds"]["final_evaluation"] if seed is None else seed)]
         if env.get("level_pack"):
             args += ["--level-pack", str(env["level_pack"])]
+    return subprocess.run(args, check=True) if wait else subprocess.Popen(args)
+
+
+def arcade(run_id: str | None = None, checkpoint: str | Path | None = None,
+           seed: int | None = None, wait: bool = True) -> subprocess.Popen[bytes] | subprocess.CompletedProcess[bytes]:
+    require_integration()
+    executable = arcade_executable()
+    run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
+    checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+    policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
+    export_checkpoint(checkpoint_path, policy_path)
+    saved = load_checkpoint(checkpoint_path)
+    env = saved["config"]["environment"]
+    args = [str(executable), "--policy", str(policy_path),
+            "--frame-skip", str(env["frame_skip"]), "--max-steps", str(env["max_episode_steps"]),
+            "--seed", str(saved["config"]["seeds"]["final_evaluation"] if seed is None else seed)]
     return subprocess.run(args, check=True) if wait else subprocess.Popen(args)

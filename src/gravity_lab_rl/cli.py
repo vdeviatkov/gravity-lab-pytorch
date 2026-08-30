@@ -14,7 +14,7 @@ from .control import read_control, request_control, resolve_run
 from .evaluation import evaluate_model
 from .export import export_checkpoint
 from .model import DenseQNetwork, select_device
-from .playback import play
+from .playback import arcade, play
 from .trainer import Trainer, make_run_id
 
 
@@ -63,6 +63,10 @@ def main(argv: list[str] | None = None) -> int:
     playback.add_argument("--group", type=int); playback.add_argument("--track", type=int)
     playback.add_argument("--league", type=int); playback.add_argument("--fps", type=int)
     playback.add_argument("--seed", type=int); playback.add_argument("--validate-only", action="store_true")
+    ai_arcade = sub.add_parser("arcade")
+    _run_arg(ai_arcade)
+    ai_arcade.add_argument("--checkpoint")
+    ai_arcade.add_argument("--seed", type=int)
     control = sub.add_parser("control")
     control.add_argument("action", choices=("status", "pause", "resume", "stop"))
     _run_arg(control)
@@ -108,6 +112,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "play":
         play(args.run_id, args.checkpoint, args.episodes, args.group, args.track, args.league,
              args.fps, args.seed, args.validate_only)
+        return 0
+    if args.command == "arcade":
+        arcade(args.run_id, args.checkpoint, args.seed)
         return 0
     return 2
 

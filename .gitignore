@@ -1,9 +1,9 @@
 .venv/
 artifacts/
+build-native/
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 .idea/
 .DS_Store
-
