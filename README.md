@@ -1,23 +1,45 @@
 # Gravity Lab PyTorch
 
 A small, standalone PyTorch Double DQN experiment repository for the faithful
-`gravity-lab-classic-v1` environment. The game, native physics, Python bindings, portable policy
-format, and graphical viewer remain in the separate, read-only Gravity Lab repository. This
-repository owns all neural-network, replay-buffer, training, control, and experiment code.
-
-The default game repository is `/Users/vdeviatkov/Documents/game`. Override it with
-`GRAVITY_LAB_REPO=/path/to/game`. If the native library is elsewhere, set
-`GRAVITY_LAB_CLASSIC_LIBRARY=/absolute/path/to/libgravity_lab_classic.dylib` (or `.so`).
+`gravity-lab-classic-v1` environment. The `gravity-lab/` Git submodule provides the game, native
+physics, Python bindings, portable policy format, and graphical viewer. This repository owns all
+neural-network, replay-buffer, training, control, and experiment code.
 
 ## Setup
 
 ```sh
+git clone --recurse-submodules https://github.com/vdeviatkov/gravity-lab-pytorch.git
+cd gravity-lab-pytorch
 ./scripts/bootstrap.sh
 ```
 
-The script creates `.venv`, installs this project and Gravity Lab editable, installs PyTorch,
-NumPy, and pytest, and checks both the native library and viewer. No Gymnasium or RL framework is
-used. On a platform where `python3` is unsuitable, use `PYTHON=python3.12 ./scripts/bootstrap.sh`.
+If the repository was cloned without `--recurse-submodules`, `bootstrap.sh` initializes the
+submodule automatically. The equivalent manual command is:
+
+```sh
+git submodule update --init --recursive
+```
+
+The script builds the submodule's native classic library and graphical viewer when absent, creates
+`.venv`, and installs this project, Gravity Lab, PyTorch, NumPy, and pytest. No Gymnasium or RL
+framework is used. On a platform where `python3` is unsuitable, use
+`PYTHON=python3.12 ./scripts/bootstrap.sh`.
+
+Native build prerequisites are CMake 3.20+, a C++20 compiler, pkg-config, SDL2, SDL2_image, and
+SDL2_ttf. On macOS, install them with:
+
+```sh
+brew install cmake pkg-config sdl2 sdl2_image sdl2_ttf
+```
+
+On Debian or Ubuntu:
+
+```sh
+sudo apt install cmake pkg-config build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+```
+
+For advanced development, `GRAVITY_LAB_REPO=/path/to/another/checkout` can override the bundled
+submodule. `GRAVITY_LAB_CLASSIC_LIBRARY=/path/to/library` can override the native library.
 
 ## Train
 
@@ -120,7 +142,7 @@ Manual export and viewer validation:
 
 ```sh
 .venv/bin/gravity-lab-rl export --latest
-/Users/vdeviatkov/Documents/game/build-classic-rl/gravity_lab_classic_viewer \
+./gravity-lab/build-classic-rl/gravity_lab_classic_viewer \
   --policy artifacts/RUN_ID/latest.gdp --validate-only
 ```
 
@@ -135,7 +157,7 @@ replay sampling, validation, and final-evaluation seeds are separate configurati
 
 ## Troubleshooting
 
-- “Python bindings missing”: set `GRAVITY_LAB_REPO` and rerun `bootstrap.sh`.
+- “Python bindings missing”: initialize the submodule and rerun `bootstrap.sh`.
 - “native library missing”: build the game with `GRAVITY_LAB_BUILD_CLASSIC=ON` as documented in
   `game/docs/classic-rl.md`, or set `GRAVITY_LAB_CLASSIC_LIBRARY`.
 - “viewer missing”: build the `gravity_lab_classic_viewer` target in `build-classic-rl`.

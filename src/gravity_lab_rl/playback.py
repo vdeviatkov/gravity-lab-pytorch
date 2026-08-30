@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ from .control import resolve_run
 from .export import export_checkpoint
 
 
-DEFAULT_GAME_REPO = Path("/Users/vdeviatkov/Documents/game")
+DEFAULT_GAME_REPO = Path(__file__).resolve().parents[2] / "gravity-lab"
 
 
 def game_repo() -> Path:
@@ -20,8 +21,22 @@ def game_repo() -> Path:
 def integration_paths() -> tuple[Path, Path, Path]:
     root = game_repo()
     package = root / "python" / "gravity_lab"
-    library = root / "build-classic-rl" / ("libgravity_lab_classic.dylib" if os.uname().sysname == "Darwin" else "libgravity_lab_classic.so")
-    viewer = root / "build-classic-rl" / "gravity_lab_classic_viewer"
+    system = platform.system()
+    library_name = {"Darwin": "libgravity_lab_classic.dylib",
+                    "Windows": "gravity_lab_classic.dll"}.get(system, "libgravity_lab_classic.so")
+    executable_name = "gravity_lab_classic_viewer.exe" if system == "Windows" else "gravity_lab_classic_viewer"
+    build = root / "build-classic-rl"
+    library_override = os.environ.get("GRAVITY_LAB_CLASSIC_LIBRARY")
+    library_candidates = ([Path(library_override).expanduser()] if library_override else []) + [
+        build / library_name, build / "lib" / library_name,
+        build / "Release" / library_name, build / "Debug" / library_name,
+    ]
+    viewer_candidates = [build / executable_name, build / "Release" / executable_name,
+                         build / "Debug" / executable_name]
+    library = next((path.resolve() for path in library_candidates if path.is_file()),
+                   library_candidates[0].resolve())
+    viewer = next((path.resolve() for path in viewer_candidates if path.is_file()),
+                  viewer_candidates[0].resolve())
     return package, library, viewer
 
 
@@ -33,7 +48,8 @@ def require_integration(require_viewer: bool = True) -> tuple[Path, Path, Path]:
     if require_viewer and not viewer.is_file(): missing.append(f"graphical viewer: {viewer}")
     if missing:
         raise RuntimeError("Gravity Lab integration is incomplete. Missing:\n  " + "\n  ".join(missing) +
-                           "\nSet GRAVITY_LAB_REPO or GRAVITY_LAB_CLASSIC_LIBRARY and run scripts/bootstrap.sh.")
+                           "\nInitialize the submodule and run scripts/bootstrap.sh. "
+                           "GRAVITY_LAB_REPO and GRAVITY_LAB_CLASSIC_LIBRARY are optional overrides.")
     os.environ.setdefault("GRAVITY_LAB_CLASSIC_LIBRARY", str(library))
     return package, library, viewer
 
@@ -65,4 +81,3 @@ def play(run_id: str | None = None, checkpoint: str | Path | None = None, episod
         if env.get("level_pack"):
             args += ["--level-pack", str(env["level_pack"])]
     return subprocess.run(args, check=True) if wait else subprocess.Popen(args)
-

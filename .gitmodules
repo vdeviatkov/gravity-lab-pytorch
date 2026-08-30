@@ -1,0 +1,3 @@
+[submodule "gravity-lab"]
+	path = gravity-lab
+	url = https://github.com/vdeviatkov/gravity-lab.git

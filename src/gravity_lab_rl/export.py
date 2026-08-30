@@ -44,7 +44,7 @@ def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
         data: dict[str, Any] = {
             "format": "gravity-lab-dense-q-policy-sidecar-v1",
             "policy": destination.name, "policy_sha256": digest,
-            "checkpoint": str(Path(checkpoint_path).resolve()),
+            "checkpoint": Path(checkpoint_path).name,
             "environment_id": ENVIRONMENT_ID, "observation_size": OBSERVATION_SIZE,
             "action_count": ACTION_COUNT, "configuration": checkpoint["config"],
             "normalization": norm, "metadata": checkpoint.get("metadata", {}),
@@ -56,4 +56,3 @@ def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
         temporary.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         os.replace(temporary, target)
     return destination
-

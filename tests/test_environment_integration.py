@@ -5,8 +5,10 @@ import pytest
 
 
 def test_classic_environment_smoke():
-    game = Path(os.environ.get("GRAVITY_LAB_REPO", "/Users/vdeviatkov/Documents/game"))
-    library = game / "build-classic-rl" / "libgravity_lab_classic.dylib"
+    default_game = Path(__file__).resolve().parents[1] / "gravity-lab"
+    game = Path(os.environ.get("GRAVITY_LAB_REPO", default_game))
+    suffix = ".dylib" if __import__("platform").system() == "Darwin" else ".so"
+    library = game / "build-classic-rl" / f"libgravity_lab_classic{suffix}"
     if not library.is_file():
         pytest.skip(f"classic native library unavailable: {library}")
     os.environ.setdefault("GRAVITY_LAB_CLASSIC_LIBRARY", str(library))
@@ -20,4 +22,3 @@ def test_classic_environment_smoke():
         result = env.step(1)
         assert len(observation) == 28 and len(result.observation) == 28
         assert isinstance(result.reward, float)
-

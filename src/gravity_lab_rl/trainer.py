@@ -41,17 +41,25 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _portable_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(_repo_root()))
+    except ValueError:
+        return path.name
+
+
 def make_run_id() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{os.getpid()}"
 
 
 def make_metadata(config: dict[str, Any], device: torch.device) -> dict[str, Any]:
+    gravity_path = game_repo()
     return {
         "format": "gravity-lab-rl-metadata-v1",
-        "experiment_repository": str(_repo_root()),
+        "experiment_repository": ".",
         "experiment_repository_commit": _git_commit(_repo_root()),
-        "gravity_lab_repository": str(game_repo()),
-        "gravity_lab_repository_commit": _git_commit(game_repo()),
+        "gravity_lab_repository": _portable_path(gravity_path),
+        "gravity_lab_repository_commit": _git_commit(gravity_path),
         "environment_id": config["environment_id"],
         "environment_configuration": config["environment"],
         "algorithm_configuration": config["algorithm"],
@@ -121,7 +129,7 @@ class Trainer:
             "training_start_timestamp", self.metadata["training_start_timestamp"]
         )
         self.metadata["resume_timestamps"] = [*prior.get("resume_timestamps", []), _now()]
-        self.metadata["resumed_from"] = str(path.resolve())
+        self.metadata["resumed_from"] = _portable_path(path)
         self._last_checkpoint_active = self.active_elapsed
         self._active_since = time.monotonic()
 
@@ -166,7 +174,7 @@ class Trainer:
             "optimizer_updates": self.optimizer_update_count, "episodes": self.completed_episode_count,
             "active_training_seconds": self.current_active_elapsed(),
             "epsilon": self.epsilon(), "latest_metrics": self.latest_metrics,
-            "checkpoint": str(checkpoint or self.run_dir / "latest.pt"),
+            "checkpoint": _portable_path(checkpoint or self.run_dir / "latest.pt"),
             "pid": os.getpid(), "device": str(self.device),
         })
 
@@ -320,9 +328,10 @@ class Trainer:
             "completed_episode_count": self.completed_episode_count,
             "checkpoint_selection_rule": self.config["experiment"]["checkpoint_selection_rule"],
             "final_evaluation": evaluation,
-            "paths": {"final_checkpoint": str(self.run_dir / "final.pt"),
-                      "final_policy": str(self.run_dir / "final.gdp"),
-                      "metrics": str(metrics_path), "metadata": str(self.run_dir / "metadata.json")},
+            "paths": {"final_checkpoint": _portable_path(self.run_dir / "final.pt"),
+                      "final_policy": _portable_path(self.run_dir / "final.gdp"),
+                      "metrics": _portable_path(metrics_path),
+                      "metadata": _portable_path(self.run_dir / "metadata.json")},
         }
         atomic_write_json(self.run_dir / "summary.json", summary)
         self.metadata.update({"training_end_timestamp": summary["training_end_timestamp"],
