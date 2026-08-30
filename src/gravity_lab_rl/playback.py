@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+import json
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from .export import export_checkpoint
 
 
 DEFAULT_GAME_REPO = Path(__file__).resolve().parents[2] / "gravity-lab"
+DEFAULT_BUNDLED_POLICY = Path(__file__).resolve().parents[2] / "policies" / "classic_intro.gdp"
 
 
 def game_repo() -> Path:
@@ -62,19 +64,68 @@ def arcade_executable() -> Path:
     return candidate
 
 
-def play(run_id: str | None = None, checkpoint: str | Path | None = None, episodes: int = 5,
+def bundled_policy() -> Path:
+    if not DEFAULT_BUNDLED_POLICY.is_file():
+        raise FileNotFoundError(f"bundled policy is missing: {DEFAULT_BUNDLED_POLICY}")
+    return DEFAULT_BUNDLED_POLICY
+
+
+def _policy_settings(path: str | Path) -> tuple[Path, dict[str, Any], int]:
+    from gravity_lab import DenseQPolicy
+
+    policy_path = Path(path).expanduser().resolve()
+    if not policy_path.is_file():
+        raise FileNotFoundError(f"policy not found: {policy_path}")
+    loaded = DenseQPolicy.load(policy_path)
+    if loaded.environment_id != "gravity-lab-classic-v1" or loaded.observation_size != 28 or loaded.action_count != 9:
+        raise ValueError("policy must target gravity-lab-classic-v1 with 28 observations and 9 actions")
+    environment: dict[str, Any] = {
+        "level_group": 0, "track": 0, "league": 0, "frame_skip": 2,
+        "max_episode_steps": 2000, "level_pack": None,
+    }
+    seed = 2_000_007
+    sidecar = policy_path.with_suffix(policy_path.suffix + ".json")
+    if sidecar.is_file():
+        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        recorded = metadata.get("training_environment") or metadata.get("configuration", {}).get("environment", {})
+        environment.update({key: recorded[key] for key in environment if key in recorded})
+        seed = int(metadata.get("configuration", {}).get("seeds", {}).get("final_evaluation", seed))
+    return policy_path, environment, seed
+
+
+def _check_source(run_id: str | None, checkpoint: str | Path | None,
+                  policy: str | Path | None) -> None:
+    if sum(value is not None for value in (run_id, checkpoint, policy)) > 1:
+        raise ValueError("choose only one of run_id, checkpoint, or policy")
+
+
+def play(run_id: str | None = None, checkpoint: str | Path | None = None,
+         policy: str | Path | None = None, episodes: int = 5,
          group: int | None = None, track: int | None = None, league: int | None = None,
          fps: int | None = None, seed: int | None = None, validate_only: bool = False,
          wait: bool = True) -> subprocess.Popen[bytes] | subprocess.CompletedProcess[bytes]:
+    _check_source(run_id, checkpoint, policy)
     _, _, viewer = require_integration()
-    run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
-    checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
-    if not checkpoint_path.is_file():
-        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
-    policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
-    export_checkpoint(checkpoint_path, policy_path)
-    saved = load_checkpoint(checkpoint_path)
-    env = saved["config"]["environment"]
+    saved = None
+    policy_seed = 2_000_007
+    if policy is not None:
+        policy_path, env, policy_seed = _policy_settings(policy)
+    else:
+        try:
+            run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
+        except FileNotFoundError:
+            if run_id is not None or checkpoint is not None:
+                raise
+            policy_path, env, policy_seed = _policy_settings(bundled_policy())
+        else:
+            checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
+            if not checkpoint_path.is_file():
+                raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+            policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
+            export_checkpoint(checkpoint_path, policy_path)
+            saved = load_checkpoint(checkpoint_path)
+            env = saved["config"]["environment"]
+            policy_seed = int(saved["config"]["seeds"]["final_evaluation"])
     args = [str(viewer), "--policy", str(policy_path)]
     if validate_only:
         args.append("--validate-only")
@@ -85,25 +136,39 @@ def play(run_id: str | None = None, checkpoint: str | Path | None = None, episod
                  "--league", str(env["league"] if league is None else league),
                  "--frame-skip", str(env["frame_skip"]), "--max-steps", str(env["max_episode_steps"]),
                  "--episodes", str(episodes), "--fps", str(actual_fps),
-                 "--seed", str(saved["config"]["seeds"]["final_evaluation"] if seed is None else seed)]
+                 "--seed", str(policy_seed if seed is None else seed)]
         if env.get("level_pack"):
             args += ["--level-pack", str(env["level_pack"])]
     return subprocess.run(args, check=True) if wait else subprocess.Popen(args)
 
 
 def arcade(run_id: str | None = None, checkpoint: str | Path | None = None,
+           policy: str | Path | None = None,
            seed: int | None = None, wait: bool = True) -> subprocess.Popen[bytes] | subprocess.CompletedProcess[bytes]:
+    _check_source(run_id, checkpoint, policy)
     require_integration()
     executable = arcade_executable()
-    run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
-    checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
-    if not checkpoint_path.is_file():
-        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
-    policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
-    export_checkpoint(checkpoint_path, policy_path)
-    saved = load_checkpoint(checkpoint_path)
-    env = saved["config"]["environment"]
+    saved = None
+    policy_seed = 2_000_007
+    if policy is not None:
+        policy_path, env, policy_seed = _policy_settings(policy)
+    else:
+        try:
+            run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
+        except FileNotFoundError:
+            if run_id is not None or checkpoint is not None:
+                raise
+            policy_path, env, policy_seed = _policy_settings(bundled_policy())
+        else:
+            checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
+            if not checkpoint_path.is_file():
+                raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+            policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
+            export_checkpoint(checkpoint_path, policy_path)
+            saved = load_checkpoint(checkpoint_path)
+            env = saved["config"]["environment"]
+            policy_seed = int(saved["config"]["seeds"]["final_evaluation"])
     args = [str(executable), "--policy", str(policy_path),
             "--frame-skip", str(env["frame_skip"]), "--max-steps", str(env["max_episode_steps"]),
-            "--seed", str(saved["config"]["seeds"]["final_evaluation"] if seed is None else seed)]
+            "--seed", str(policy_seed if seed is None else seed)]
     return subprocess.run(args, check=True) if wait else subprocess.Popen(args)

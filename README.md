@@ -2,7 +2,7 @@
 
 PyTorch Double DQN training and graphical policy playback for
 `gravity-lab-classic-v1`. The faithful game and physics are included as the `gravity-lab/` Git
-submodule.
+submodule. A small trained policy is bundled, so AI Arcade works immediately after setup.
 
 ## Quick start
 
@@ -52,6 +52,9 @@ On native Windows, use the matching `.cmd` scripts:
 
 The one-minute run is a pipeline test, not a generally reliable policy.
 
+The bundled `policies/classic_intro.gdp` model was trained only on Easy / Intro / 100cc. AI Arcade
+uses the newest local training run when one exists and otherwise falls back to this bundled model.
+
 ## Train
 
 ```sh
@@ -72,12 +75,27 @@ CPU can be faster than MPS for this small model. Add `--device cpu` when desired
 
 ## Watch the model
 
-Use AI Arcade to choose any track, league, playback speed, and episode count:
+Use AI Arcade to choose any track, league, playback speed, and episode count.
+
+Choose which model to run:
 
 ```sh
+# Newest local training run; bundled policy if no run exists
 ./scripts/ai_arcade.sh
+
+# Specific training run
 ./scripts/ai_arcade.sh --run-id RUN_ID
+
+# Specific portable model
+./scripts/ai_arcade.sh --policy policies/classic_intro.gdp
+
+# Specific resumable PyTorch checkpoint (exported automatically)
+./scripts/ai_arcade.sh --checkpoint artifacts/RUN_ID/final.pt
 ```
+
+The same options work with `play_latest.sh` and the Windows `.cmd` scripts. Use only one model
+selection option at a time. Run IDs are the directory names shown by `ls artifacts` on macOS/Linux
+or `Get-ChildItem artifacts` on Windows.
 
 Controls:
 
@@ -124,6 +142,9 @@ Runs are stored under `artifacts/<run-id>/`:
 - `metrics.jsonl`: episode metrics
 - `metadata.json`: configuration and reproducibility data
 - `summary.json`: final evaluation and counters
+
+Generated `artifacts/` and resumable `.pt` files stay out of Git. Only the compact portable model
+under `policies/` is versioned.
 
 The environment is deterministic on a fixed track, so repeated greedy evaluations can be
 identical.

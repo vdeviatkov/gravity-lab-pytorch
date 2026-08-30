@@ -57,15 +57,21 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--checkpoint")
     export.add_argument("--output")
     playback = sub.add_parser("play")
-    _run_arg(playback)
-    playback.add_argument("--checkpoint")
+    playback_source = playback.add_mutually_exclusive_group()
+    playback_source.add_argument("--run-id")
+    playback_source.add_argument("--latest", action="store_true")
+    playback_source.add_argument("--checkpoint")
+    playback_source.add_argument("--policy")
     playback.add_argument("--episodes", type=int, default=5)
     playback.add_argument("--group", type=int); playback.add_argument("--track", type=int)
     playback.add_argument("--league", type=int); playback.add_argument("--fps", type=int)
     playback.add_argument("--seed", type=int); playback.add_argument("--validate-only", action="store_true")
     ai_arcade = sub.add_parser("arcade")
-    _run_arg(ai_arcade)
-    ai_arcade.add_argument("--checkpoint")
+    arcade_source = ai_arcade.add_mutually_exclusive_group()
+    arcade_source.add_argument("--run-id")
+    arcade_source.add_argument("--latest", action="store_true")
+    arcade_source.add_argument("--checkpoint")
+    arcade_source.add_argument("--policy")
     ai_arcade.add_argument("--seed", type=int)
     control = sub.add_parser("control")
     control.add_argument("action", choices=("status", "pause", "resume", "stop"))
@@ -110,11 +116,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(evaluate_model(model, cfg, args.episodes, args.seed, device), indent=2, sort_keys=True))
         return 0
     if args.command == "play":
-        play(args.run_id, args.checkpoint, args.episodes, args.group, args.track, args.league,
+        play(args.run_id, args.checkpoint, args.policy, args.episodes, args.group, args.track, args.league,
              args.fps, args.seed, args.validate_only)
         return 0
     if args.command == "arcade":
-        arcade(args.run_id, args.checkpoint, args.seed)
+        arcade(args.run_id, args.checkpoint, args.policy, args.seed)
         return 0
     return 2
 

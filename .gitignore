@@ -4,6 +4,7 @@ build-native/
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.pt
 .pytest_cache/
 .idea/
 .DS_Store
