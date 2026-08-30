@@ -1,7 +1,7 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro.gdp",
-  "policy_sha256": "eabf7b93255de9dc680885024e47fc9568d4d269c3944fe7de8046e49f4de767",
+  "policy_sha256": "df2940fb596090c8f6605dec36c17ce2ac818040b641fdbe897dfc0ed817068a",
   "environment_id": "gravity-lab-classic-v1",
   "observation_size": 28,
   "action_count": 9,
@@ -10,25 +10,25 @@
   "normalization": "identity",
   "training_environment": {
     "level_group": 0,
-    "track": 0,
+    "track": 2,
     "league": 0,
     "frame_skip": 2,
     "max_episode_steps": 2000
   },
   "training": {
-    "active_duration_seconds": 60.0004,
-    "transitions": 341008,
-    "optimizer_updates": 84003,
-    "note": "One-minute pipeline smoke policy trained only on Easy / Intro / 100cc"
+    "active_duration_seconds": 450.0,
+    "transitions": 894936,
+    "optimizer_updates": 222485,
+    "note": "Best result from an all-tracks Double DQN sweep (Easy/Medium/Pro), trained on Easy track 2"
   },
   "reference_evaluation": {
     "episodes": 5,
-    "mean_reward": 21.59676141357422,
-    "mean_progress": 0.9664360012174187,
+    "mean_reward": 39.99056262207034,
+    "mean_progress": 0.9896679561977828,
     "finish_rate": 1.0,
     "crash_rate": 0.0,
     "truncation_rate": 0.0,
     "note": "Deterministic same-track evaluation; not a general performance claim"
   },
-  "gravity_lab_commit": "233d4468e67a94521420a7f0c6dc092af6a59764"
+  "gravity_lab_commit": "a893f5ba0de5fd5a82f447dc8f44621e9e435f70"
 }
