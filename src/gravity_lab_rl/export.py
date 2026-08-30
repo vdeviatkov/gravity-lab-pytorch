@@ -29,6 +29,29 @@ def policy_from_model(model: DenseQNetwork) -> DenseQPolicy:
     return policy
 
 
+def load_policy_into_model(model: DenseQNetwork, path: str | Path) -> dict[str, Any]:
+    """Initialize a training model from a compatible portable policy."""
+    import torch
+
+    policy = DenseQPolicy.load(path)
+    if policy.environment_id != ENVIRONMENT_ID or policy.observation_size != OBSERVATION_SIZE or policy.action_count != ACTION_COUNT:
+        raise ValueError("initial policy is incompatible with gravity-lab-classic-v1")
+    if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != [128, 128, 9]:
+        raise ValueError("initial policy architecture must be 28x128x128x9")
+    with torch.no_grad():
+        model.input_scale.copy_(torch.tensor(policy.input_scale, dtype=model.input_scale.dtype,
+                                             device=model.input_scale.device))
+        model.input_bias.copy_(torch.tensor(policy.input_bias, dtype=model.input_bias.dtype,
+                                            device=model.input_bias.device))
+        for module, layer in zip((model.fc1, model.fc2, model.q), policy.layers):
+            module.weight.copy_(torch.tensor(layer.weights, dtype=module.weight.dtype,
+                                             device=module.weight.device))
+            module.bias.copy_(torch.tensor(layer.bias, dtype=module.bias.dtype,
+                                           device=module.bias.device))
+    return {"kind": "fixed", "input_scale": list(policy.input_scale),
+            "input_bias": list(policy.input_bias)}
+
+
 def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
                       sidecar: bool = True) -> Path:
     checkpoint = load_checkpoint(checkpoint_path)

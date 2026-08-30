@@ -1,7 +1,7 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro.gdp",
-  "policy_sha256": "df2940fb596090c8f6605dec36c17ce2ac818040b641fdbe897dfc0ed817068a",
+  "policy_sha256": "e56d4ba511bb93590f4ea6369e1318263a3e97020351f8328b24cf502f89ee18",
   "environment_id": "gravity-lab-classic-v1",
   "observation_size": 28,
   "action_count": 9,

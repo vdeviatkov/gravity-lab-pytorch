@@ -44,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--duration-seconds", type=float)
     train.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"))
     train.add_argument("--run-id")
+    train.add_argument("--initialize-policy", help="start from a compatible portable .gdp policy")
     resume = sub.add_parser("resume")
     _run_arg(resume)
     resume.add_argument("--duration-seconds", type=float)
@@ -83,7 +84,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "train":
         cfg = configured(load_config(args.config), duration_seconds=args.duration_seconds, device=args.device)
         run_id = args.run_id or make_run_id()
-        summary = Trainer(cfg, Path(__file__).resolve().parents[2] / "artifacts" / run_id).run()
+        initial_policy = Path(args.initialize_policy) if args.initialize_policy else None
+        summary = Trainer(cfg, Path(__file__).resolve().parents[2] / "artifacts" / run_id,
+                          initial_policy=initial_policy).run()
         _print_summary(summary)
         return 0
     if args.command == "resume":

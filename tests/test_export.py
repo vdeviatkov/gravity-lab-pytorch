@@ -6,7 +6,7 @@ from gravity_lab import DenseQPolicy
 
 from gravity_lab_rl import ACTION_COUNT, ENVIRONMENT_ID, OBSERVATION_SIZE
 from gravity_lab_rl.checkpoint import save_checkpoint
-from gravity_lab_rl.export import export_checkpoint, policy_from_model
+from gravity_lab_rl.export import export_checkpoint, load_policy_into_model, policy_from_model
 from gravity_lab_rl.model import DenseQNetwork
 
 
@@ -38,3 +38,16 @@ def test_exported_contract_and_atomic_file(tmp_path):
     assert sidecar["environment_id"] == ENVIRONMENT_ID
     assert sidecar["observation_size"] == 28 and sidecar["action_count"] == 9
     assert not (tmp_path / "latest.gdp.tmp").exists()
+
+
+def test_portable_policy_can_initialize_training_model(tmp_path):
+    source = DenseQNetwork(41, [0.5] * 28, [-0.25] * 28).eval()
+    policy_path = tmp_path / "source.gdp"
+    policy_from_model(source).save(policy_path)
+    restored = DenseQNetwork(99).eval()
+    normalization = load_policy_into_model(restored, policy_path)
+    observations = torch.randn(7, 28, generator=torch.Generator().manual_seed(12))
+    with torch.inference_mode():
+        torch.testing.assert_close(restored(observations), source(observations), rtol=0, atol=0)
+    assert normalization["input_scale"] == [0.5] * 28
+    assert normalization["input_bias"] == [-0.25] * 28

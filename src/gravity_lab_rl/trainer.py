@@ -17,9 +17,10 @@ import torch
 import torch.nn.functional as F
 
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
+from .config import curriculum_environment_index, curriculum_environments
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import double_dqn_targets, evaluate_model
-from .export import export_checkpoint
+from .export import export_checkpoint, load_policy_into_model
 from .model import DenseQNetwork, select_device
 from .playback import game_repo, require_integration
 from .replay import ReplayBuffer
@@ -62,6 +63,7 @@ def make_metadata(config: dict[str, Any], device: torch.device) -> dict[str, Any
         "gravity_lab_repository_commit": _git_commit(gravity_path),
         "environment_id": config["environment_id"],
         "environment_configuration": config["environment"],
+        "curriculum": config.get("curriculum"),
         "algorithm_configuration": config["algorithm"],
         "normalization": config["normalization"], "seeds": config["seeds"],
         "python_version": sys.version, "pytorch_version": torch.__version__,
@@ -77,16 +79,23 @@ def make_metadata(config: dict[str, Any], device: torch.device) -> dict[str, Any
 
 class Trainer:
     def __init__(self, config: dict[str, Any], run_dir: Path,
-                 resume_checkpoint: Path | None = None) -> None:
+                 resume_checkpoint: Path | None = None,
+                 initial_policy: Path | None = None) -> None:
+        if resume_checkpoint is not None and initial_policy is not None:
+            raise ValueError("resume_checkpoint and initial_policy are mutually exclusive")
         require_integration(require_viewer=False)
         self.config, self.run_dir = config, run_dir
         self.run_dir.mkdir(parents=True, exist_ok=True)
+        torch.set_num_threads(int(config["experiment"].get("torch_num_threads", 1)))
         self.device = select_device(config["experiment"]["device"])
         norm, seeds, algo = config["normalization"], config["seeds"], config["algorithm"]
         self.online = DenseQNetwork(seeds["parameter_initialization"], norm["input_scale"],
                                     norm["input_bias"]).to(self.device)
         self.target = DenseQNetwork(seeds["parameter_initialization"], norm["input_scale"],
                                     norm["input_bias"]).to(self.device)
+        if initial_policy is not None:
+            loaded_normalization = load_policy_into_model(self.online, initial_policy)
+            self.config["normalization"] = loaded_normalization
         self.target.load_state_dict(self.online.state_dict())
         self.target.eval()
         self.optimizer = torch.optim.Adam(self.online.parameters(), lr=algo["learning_rate"])
@@ -97,6 +106,9 @@ class Trainer:
         self.latest_metrics: dict[str, Any] = {}
         self.resume_checkpoint = resume_checkpoint
         self.metadata = make_metadata(config, self.device)
+        self.metadata["torch_num_threads"] = torch.get_num_threads()
+        if initial_policy is not None:
+            self.metadata["initialized_from_policy"] = _portable_path(initial_policy)
         self.control_path = run_dir / "control.json"
         self._stop_signal: str | None = None
         self._active_since = time.monotonic()
@@ -142,6 +154,8 @@ class Trainer:
         return self.active_elapsed + (0.0 if self._paused else time.monotonic() - self._active_since)
 
     def _checkpoint_payload(self) -> dict[str, Any]:
+        environments = curriculum_environments(self.config)
+        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count)
         return {
             "online_network": self.online.state_dict(), "target_network": self.target.state_dict(),
             "optimizer": self.optimizer.state_dict(), "replay_buffer": self.replay.state_dict(),
@@ -154,6 +168,8 @@ class Trainer:
             "rng_state": rng_state(), "config": self.config, "latest_metrics": self.latest_metrics,
             "normalization": self.config["normalization"], "metadata": self.metadata,
             "active_training_duration_seconds": self.current_active_elapsed(),
+            "curriculum_state": {"environment_index": curriculum_index,
+                                 "environment": environments[curriculum_index]},
             "saved_at": _now(),
         }
 
@@ -169,6 +185,8 @@ class Trainer:
         return path
 
     def _status(self, state: str, checkpoint: Path | None = None) -> None:
+        environments = curriculum_environments(self.config)
+        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count)
         update_status(self.control_path, {
             "state": state, "transitions": self.transition_count,
             "optimizer_updates": self.optimizer_update_count, "episodes": self.completed_episode_count,
@@ -176,6 +194,8 @@ class Trainer:
             "epsilon": self.epsilon(), "latest_metrics": self.latest_metrics,
             "checkpoint": _portable_path(checkpoint or self.run_dir / "latest.pt"),
             "pid": os.getpid(), "device": str(self.device),
+            "curriculum_environment_index": curriculum_index,
+            "environment": environments[curriculum_index],
         })
 
     def _pause_if_requested(self) -> bool:
@@ -224,7 +244,8 @@ class Trainer:
     def run(self) -> dict[str, Any]:
         from gravity_lab import ClassicConfig, ClassicGravityEnv
 
-        env_cfg, algo, seeds = self.config["environment"], self.config["algorithm"], self.config["seeds"]
+        environments = curriculum_environments(self.config)
+        algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
         old_handlers: dict[int, Any] = {}
@@ -237,60 +258,82 @@ class Trainer:
         graceful_reason = "duration-expired"
         failure: BaseException | None = None
         self._status("running")
+        env: ClassicGravityEnv | None = None
         try:
-            classic = ClassicConfig(env_cfg["level_group"], env_cfg["track"], env_cfg["league"],
-                                    env_cfg["frame_skip"], env_cfg["max_episode_steps"], seeds["environment"])
             with metrics_path.open("a", encoding="utf-8", buffering=1) as metrics_stream:
-                with ClassicGravityEnv(classic, env_cfg.get("level_pack")) as env:
-                    observation = env.reset(seeds["environment"] + self.completed_episode_count)
-                    episode_reward, episode_length, last_loss = 0.0, 0, None
-                    while self.current_active_elapsed() < duration and not self._stop_signal:
-                        if self._pause_if_requested():
-                            break
-                        epsilon = self.epsilon()
-                        if self.exploration_rng.random() < epsilon:
-                            action = self.exploration_rng.randrange(9)
-                        else:
-                            with torch.inference_mode():
-                                values = self.online(torch.tensor(observation, dtype=torch.float32,
-                                                                  device=self.device))
-                                action = int(torch.argmax(values).item())
-                        step = env.step(action)
-                        self.replay.add(observation, action, step.reward, step.observation,
-                                        step.terminated, step.truncated)
-                        observation = step.observation
-                        self.transition_count += 1
-                        episode_reward += step.reward
-                        episode_length += 1
-                        if (len(self.replay) >= algo["replay_warmup"] and
-                                self.transition_count % algo["update_every"] == 0):
-                            last_loss = self._optimize()
-                        if step.terminated or step.truncated:
-                            self.completed_episode_count += 1
-                            self.latest_metrics = {
-                                "episode": self.completed_episode_count, "reward": episode_reward,
-                                "length": episode_length, "progress": float(step.observation[0]),
-                                "finished": step.finished, "crashed": step.crashed,
-                                "truncated": step.truncated, "epsilon": epsilon, "loss": last_loss,
-                                "transitions": self.transition_count,
-                                "optimizer_updates": self.optimizer_update_count,
-                                "active_training_seconds": self.current_active_elapsed(),
-                                "timestamp": _now(),
-                            }
-                            metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
-                            metrics_stream.flush()
-                            observation = env.reset(seeds["environment"] + self.completed_episode_count)
-                            episode_reward, episode_length = 0.0, 0
-                        now = time.monotonic()
-                        if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
-                            self.latest_metrics.update({"current_episode_reward": episode_reward,
-                                                        "current_episode_length": episode_length,
-                                                        "current_progress": float(observation[0])})
-                            self._status("running")
-                            self._last_status_wall = now
-                        if (self.current_active_elapsed() - self._last_checkpoint_active >=
-                                self.config["experiment"]["checkpoint_interval_seconds"]):
-                            self.save()
+                active_index = curriculum_environment_index(self.config,
+                                                            self.completed_episode_count)
+                env_cfg = environments[active_index]
+
+                def open_environment(configuration: dict[str, Any]) -> ClassicGravityEnv:
+                    classic = ClassicConfig(
+                        configuration["level_group"], configuration["track"],
+                        configuration["league"], configuration["frame_skip"],
+                        configuration["max_episode_steps"], seeds["environment"])
+                    return ClassicGravityEnv(classic, configuration.get("level_pack"))
+
+                env = open_environment(env_cfg)
+                track_name = env.track_name
+                observation = env.reset(seeds["environment"] + self.completed_episode_count)
+                episode_reward, episode_length, last_loss = 0.0, 0, None
+                while self.current_active_elapsed() < duration and not self._stop_signal:
+                    if self._pause_if_requested():
+                        break
+                    epsilon = self.epsilon()
+                    if self.exploration_rng.random() < epsilon:
+                        action = self.exploration_rng.randrange(9)
+                    else:
+                        with torch.inference_mode():
+                            values = self.online(torch.tensor(observation, dtype=torch.float32,
+                                                              device=self.device))
+                            action = int(torch.argmax(values).item())
+                    step = env.step(action)
+                    self.replay.add(observation, action, step.reward, step.observation,
+                                    step.terminated, step.truncated)
+                    observation = step.observation
+                    self.transition_count += 1
+                    episode_reward += step.reward
+                    episode_length += 1
+                    if (len(self.replay) >= algo["replay_warmup"] and
+                            self.transition_count % algo["update_every"] == 0):
+                        last_loss = self._optimize()
+                    if step.terminated or step.truncated:
+                        self.completed_episode_count += 1
+                        self.latest_metrics = {
+                            "episode": self.completed_episode_count, "reward": episode_reward,
+                            "length": episode_length, "progress": float(step.observation[0]),
+                            "finished": step.finished, "crashed": step.crashed,
+                            "truncated": step.truncated, "epsilon": epsilon, "loss": last_loss,
+                            "transitions": self.transition_count,
+                            "optimizer_updates": self.optimizer_update_count,
+                            "active_training_seconds": self.current_active_elapsed(),
+                            "level_group": env_cfg["level_group"], "track": env_cfg["track"],
+                            "league": env_cfg["league"], "track_name": track_name,
+                            "timestamp": _now(),
+                        }
+                        metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
+                        metrics_stream.flush()
+                        next_index = curriculum_environment_index(self.config,
+                                                                  self.completed_episode_count)
+                        if next_index != active_index:
+                            env.close()
+                            env = None
+                            active_index = next_index
+                            env_cfg = environments[active_index]
+                            env = open_environment(env_cfg)
+                            track_name = env.track_name
+                        observation = env.reset(seeds["environment"] + self.completed_episode_count)
+                        episode_reward, episode_length = 0.0, 0
+                    now = time.monotonic()
+                    if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
+                        self.latest_metrics.update({"current_episode_reward": episode_reward,
+                                                    "current_episode_length": episode_length,
+                                                    "current_progress": float(observation[0])})
+                        self._status("running")
+                        self._last_status_wall = now
+                    if (self.current_active_elapsed() - self._last_checkpoint_active >=
+                            self.config["experiment"]["checkpoint_interval_seconds"]):
+                        self.save()
                 graceful_reason = self._stop_signal or "duration-expired"
         except KeyboardInterrupt:
             graceful_reason = "KeyboardInterrupt"
@@ -298,6 +341,12 @@ class Trainer:
             failure = error
             graceful_reason = f"exception: {type(error).__name__}: {error}"
         finally:
+            if env is not None:
+                try:
+                    env.close()
+                except BaseException as close_error:
+                    if failure is None:
+                        failure = close_error
             if not self._paused:
                 self.active_elapsed = self.current_active_elapsed()
                 self._paused = True

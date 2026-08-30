@@ -64,6 +64,10 @@ uses the newest local training run when one exists and otherwise falls back to t
 # Longer run
 ./scripts/train.sh --duration-seconds 3600
 
+# All 30 tracks: Easy/100cc, Medium/175cc, then Pro/220cc
+./scripts/train.sh --config configs/classic_all_tracks.json \
+  --initialize-policy policies/classic_intro.gdp --duration-seconds 1800 --device cpu
+
 # Train, then open playback
 ./scripts/train_and_play.sh --duration-seconds 60
 
@@ -72,6 +76,8 @@ uses the newest local training run when one exists and otherwise falls back to t
 ```
 
 CPU can be faster than MPS for this small model. Add `--device cpu` when desired.
+The all-tracks curriculum runs five episodes per track before advancing and repeats continuously;
+each harder level group advances to the next bike league at the same time.
 
 ## Watch the model
 

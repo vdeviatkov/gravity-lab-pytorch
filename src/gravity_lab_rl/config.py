@@ -42,6 +42,48 @@ def validate_config(config: dict[str, Any]) -> None:
     for name, seed in config["seeds"].items():
         if not isinstance(seed, int) or not 0 <= seed < 2**63:
             raise ValueError(f"seed {name} must be a nonnegative integer below 2^63")
+    curriculum = config.get("curriculum")
+    if curriculum and curriculum.get("enabled", False):
+        if int(curriculum.get("episodes_per_track", 0)) <= 0:
+            raise ValueError("curriculum episodes_per_track must be positive")
+        stages = curriculum.get("stages", [])
+        if not stages:
+            raise ValueError("enabled curriculum requires stages")
+        for stage in stages:
+            group, league = int(stage["level_group"]), int(stage["league"])
+            tracks = stage.get("tracks", [])
+            if not 0 <= group <= 2 or not 0 <= league <= 3 or not tracks:
+                raise ValueError("invalid curriculum stage")
+            if any(int(track) < 0 for track in tracks):
+                raise ValueError("curriculum tracks must be nonnegative")
+    threads = int(config["experiment"].get("torch_num_threads", 1))
+    if threads <= 0:
+        raise ValueError("torch_num_threads must be positive")
+
+
+def curriculum_environments(config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Expand the configured level/league curriculum into concrete environments."""
+    base = config["environment"]
+    curriculum = config.get("curriculum")
+    if not curriculum or not curriculum.get("enabled", False):
+        return [copy.deepcopy(base)]
+    result: list[dict[str, Any]] = []
+    for stage in curriculum["stages"]:
+        for track in stage["tracks"]:
+            environment = copy.deepcopy(base)
+            environment.update({"level_group": int(stage["level_group"]),
+                                "track": int(track), "league": int(stage["league"])})
+            result.append(environment)
+    return result
+
+
+def curriculum_environment_index(config: dict[str, Any], completed_episodes: int) -> int:
+    """Return the environment to use next, with complete cycles repeating indefinitely."""
+    environments = curriculum_environments(config)
+    curriculum = config.get("curriculum")
+    episodes_per_track = (int(curriculum["episodes_per_track"])
+                          if curriculum and curriculum.get("enabled", False) else 1)
+    return (int(completed_episodes) // episodes_per_track) % len(environments)
 
 
 def configured(config: dict[str, Any], *, duration_seconds: float | None = None,
