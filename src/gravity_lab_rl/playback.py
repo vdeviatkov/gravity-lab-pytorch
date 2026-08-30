@@ -1,0 +1,68 @@
+from __future__ import annotations
+
+import os
+import subprocess
+from pathlib import Path
+from typing import Any
+
+from .checkpoint import load_checkpoint
+from .control import resolve_run
+from .export import export_checkpoint
+
+
+DEFAULT_GAME_REPO = Path("/Users/vdeviatkov/Documents/game")
+
+
+def game_repo() -> Path:
+    return Path(os.environ.get("GRAVITY_LAB_REPO", DEFAULT_GAME_REPO)).expanduser().resolve()
+
+
+def integration_paths() -> tuple[Path, Path, Path]:
+    root = game_repo()
+    package = root / "python" / "gravity_lab"
+    library = root / "build-classic-rl" / ("libgravity_lab_classic.dylib" if os.uname().sysname == "Darwin" else "libgravity_lab_classic.so")
+    viewer = root / "build-classic-rl" / "gravity_lab_classic_viewer"
+    return package, library, viewer
+
+
+def require_integration(require_viewer: bool = True) -> tuple[Path, Path, Path]:
+    package, library, viewer = integration_paths()
+    missing = []
+    if not package.is_dir(): missing.append(f"Python bindings: {package}")
+    if not library.is_file(): missing.append(f"native library: {library}")
+    if require_viewer and not viewer.is_file(): missing.append(f"graphical viewer: {viewer}")
+    if missing:
+        raise RuntimeError("Gravity Lab integration is incomplete. Missing:\n  " + "\n  ".join(missing) +
+                           "\nSet GRAVITY_LAB_REPO or GRAVITY_LAB_CLASSIC_LIBRARY and run scripts/bootstrap.sh.")
+    os.environ.setdefault("GRAVITY_LAB_CLASSIC_LIBRARY", str(library))
+    return package, library, viewer
+
+
+def play(run_id: str | None = None, checkpoint: str | Path | None = None, episodes: int = 5,
+         group: int | None = None, track: int | None = None, league: int | None = None,
+         fps: int | None = None, seed: int | None = None, validate_only: bool = False,
+         wait: bool = True) -> subprocess.Popen[bytes] | subprocess.CompletedProcess[bytes]:
+    _, _, viewer = require_integration()
+    run = resolve_run(run_id, latest=run_id is None) if checkpoint is None else Path(checkpoint).resolve().parent
+    checkpoint_path = Path(checkpoint) if checkpoint else run / "latest.pt"
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+    policy_path = run / ("final.gdp" if checkpoint_path.name == "final.pt" else "latest.gdp")
+    export_checkpoint(checkpoint_path, policy_path)
+    saved = load_checkpoint(checkpoint_path)
+    env = saved["config"]["environment"]
+    args = [str(viewer), "--policy", str(policy_path)]
+    if validate_only:
+        args.append("--validate-only")
+    else:
+        actual_fps = fps if fps is not None else (25 if int(env["frame_skip"]) == 2 else 50)
+        args += ["--group", str(env["level_group"] if group is None else group),
+                 "--track", str(env["track"] if track is None else track),
+                 "--league", str(env["league"] if league is None else league),
+                 "--frame-skip", str(env["frame_skip"]), "--max-steps", str(env["max_episode_steps"]),
+                 "--episodes", str(episodes), "--fps", str(actual_fps),
+                 "--seed", str(saved["config"]["seeds"]["final_evaluation"] if seed is None else seed)]
+        if env.get("level_pack"):
+            args += ["--level-pack", str(env["level_pack"])]
+    return subprocess.run(args, check=True) if wait else subprocess.Popen(args)
+
