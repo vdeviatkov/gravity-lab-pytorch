@@ -24,9 +24,9 @@ if [ ! -d "$GAME_REPO/python/gravity_lab" ]; then
 fi
 
 case "$(uname -s)" in
-  Darwin) LIBRARY_NAME=libgravity_lab_classic.dylib ;;
+  Darwin) LIBRARY_NAME=gravity_lab_classic.dylib ;;
   MINGW*|MSYS*|CYGWIN*) LIBRARY_NAME=gravity_lab_classic.dll ;;
-  *) LIBRARY_NAME=libgravity_lab_classic.so ;;
+  *) LIBRARY_NAME=gravity_lab_classic.so ;;
 esac
 BUILD_DIR=$GAME_REPO/build-classic-rl
 LIBRARY=${GRAVITY_LAB_CLASSIC_LIBRARY:-$BUILD_DIR/$LIBRARY_NAME}

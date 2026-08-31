@@ -8,7 +8,7 @@ def test_classic_environment_smoke():
     default_game = Path(__file__).resolve().parents[1] / "gravity-lab"
     game = Path(os.environ.get("GRAVITY_LAB_REPO", default_game))
     suffix = ".dylib" if __import__("platform").system() == "Darwin" else ".so"
-    library = game / "build-classic-rl" / f"libgravity_lab_classic{suffix}"
+    library = game / "build-classic-rl" / f"gravity_lab_classic{suffix}"
     if not library.is_file():
         pytest.skip(f"classic native library unavailable: {library}")
     os.environ.setdefault("GRAVITY_LAB_CLASSIC_LIBRARY", str(library))

@@ -24,8 +24,8 @@ def integration_paths() -> tuple[Path, Path, Path]:
     root = game_repo()
     package = root / "python" / "gravity_lab"
     system = platform.system()
-    library_name = {"Darwin": "libgravity_lab_classic.dylib",
-                    "Windows": "gravity_lab_classic.dll"}.get(system, "libgravity_lab_classic.so")
+    library_name = {"Darwin": "gravity_lab_classic.dylib",
+                    "Windows": "gravity_lab_classic.dll"}.get(system, "gravity_lab_classic.so")
     executable_name = "gravity_lab_classic_viewer.exe" if system == "Windows" else "gravity_lab_classic_viewer"
     build = root / "build-classic-rl"
     library_override = os.environ.get("GRAVITY_LAB_CLASSIC_LIBRARY")
