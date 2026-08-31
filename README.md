@@ -52,8 +52,9 @@ On native Windows, use the matching `.cmd` scripts:
 
 The one-minute run is a pipeline test, not a generally reliable policy.
 
-The bundled `policies/classic_intro.gdp` model was trained only on Easy / Intro / 100cc. AI Arcade
-uses the newest local training run when one exists and otherwise falls back to this bundled model.
+The bundled `policies/classic_intro.gdp` model was trained only on Easy track 2 (Slope) / 100cc.
+AI Arcade uses the newest local training run when one exists and otherwise falls back to this
+bundled model.
 
 ## Train
 
