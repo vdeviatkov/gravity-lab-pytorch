@@ -1,7 +1,7 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro.gdp",
-  "policy_sha256": "e56d4ba511bb93590f4ea6369e1318263a3e97020351f8328b24cf502f89ee18",
+  "policy_sha256": "b655632ea5bc7d62b5fb80e106b930fa9ff12c8bff8023737ff7c25f2a03eb4a",
   "environment_id": "gravity-lab-classic-v1",
   "observation_size": 28,
   "action_count": 9,
@@ -10,25 +10,25 @@
   "normalization": "identity",
   "training_environment": {
     "level_group": 0,
-    "track": 2,
+    "track": 0,
     "league": 0,
     "frame_skip": 2,
     "max_episode_steps": 2000
   },
   "training": {
-    "active_duration_seconds": 450.0,
-    "transitions": 894936,
-    "optimizer_updates": 222485,
-    "note": "Best result from an all-tracks Double DQN sweep (Easy/Medium/Pro), trained on Easy track 2"
+    "active_duration_seconds": 3183.2,
+    "transitions": 5392188,
+    "optimizer_updates": 1345548,
+    "note": "Best-of-population result from a parallel Double DQN hyperparameter sweep (lr=0.0005, epsilon_decay_transitions=2000000, batch_size=128) over the full Easy/Medium/Pro all-tracks curriculum, warm-started from the previous classic_intro.gdp"
   },
   "reference_evaluation": {
-    "episodes": 5,
-    "mean_reward": 39.99056262207034,
-    "mean_progress": 0.9896679561977828,
-    "finish_rate": 1.0,
-    "crash_rate": 0.0,
-    "truncation_rate": 0.0,
-    "note": "Deterministic same-track evaluation; not a general performance claim"
+    "episodes": 30,
+    "mean_reward": 10.404810443115222,
+    "mean_progress": 0.4834936195838601,
+    "finish_rate": 0.26666666666666666,
+    "crash_rate": 0.6333333333333333,
+    "truncation_rate": 0.1,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), not a single-track result. Solves 8/10 Easy tracks (Intro, Shorty, Slope, Crackle, Knolls, Cliff, Hole, Original); Medium/Pro tracks are not yet finished but several show substantial partial progress."
   },
   "gravity_lab_commit": "a893f5ba0de5fd5a82f447dc8f44621e9e435f70"
 }
