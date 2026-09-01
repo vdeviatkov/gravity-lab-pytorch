@@ -1,11 +1,11 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro.gdp",
-  "policy_sha256": "557c7f95b59319866d1de7aa190160a691b2046c1cae32b6693ed603228b1d45",
+  "policy_sha256": "3db936f349b203358e545cd121c7d9e389506ea5ff946509ea56e4dececa777a",
   "environment_id": "gravity-lab-classic-v1",
-  "observation_size": 36,
+  "observation_size": 28,
   "action_count": 9,
-  "architecture": [36, 128, 128, 9],
+  "architecture": [28, 128, 128, 9],
   "activations": ["relu", "relu", "linear"],
   "normalization": "identity",
   "training_environment": {
@@ -16,19 +16,19 @@
     "max_episode_steps": 2000
   },
   "training": {
-    "active_duration_seconds": 60.0,
-    "transitions": 384692,
-    "optimizer_updates": 94924,
-    "note": "One-minute smoke-training run (configs/classic_intro.json via scripts/train_one_minute.sh) on Easy track 0 (Intro) / 100cc only. Re-bundled after the observation vector grew from 28 to 36 values (added an 8-ray obstacle-distance sensor over the track polyline); this is a pipeline smoke result, not a tuned sweep result."
+    "active_duration_seconds": 4287.3,
+    "transitions": 7686580,
+    "optimizer_updates": 1919146,
+    "note": "Best-of-population result from a parallel Double DQN hyperparameter sweep (lr=0.0003, epsilon_decay_transitions=2000000, batch_size=128) over the full Easy/Medium/Pro all-tracks curriculum, warm-started from the previous classic_intro.gdp"
   },
   "reference_evaluation": {
-    "episodes": 5,
-    "mean_reward": 21.740850280761713,
-    "mean_progress": 0.9768475588127103,
-    "finish_rate": 1.0,
-    "crash_rate": 0.0,
-    "truncation_rate": 0.0,
-    "note": "Deterministic same-track evaluation (Easy track 0, Intro); not a general performance claim across other tracks or leagues."
+    "episodes": 30,
+    "mean_reward": 11.00498548177084,
+    "mean_progress": 0.5090950892529447,
+    "finish_rate": 0.26666666666666666,
+    "crash_rate": 0.7,
+    "truncation_rate": 0.03333333333333333,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), not a single-track result. Solves 7/10 Easy tracks (Intro, Slope, Crackle, Knolls, Cliff, Hole, Original) plus Medium track Spikehops; other Medium/Pro tracks are not yet finished but several show substantial partial progress."
   },
-  "gravity_lab_commit": "a893f5ba0de5fd5a82f447dc8f44621e9e435f70 (plus this session's uncommitted obstacle-sensor changes to classic_environment.cpp/.hpp, classic_c_api.h, classic_env.py)"
+  "gravity_lab_commit": "a893f5ba0de5fd5a82f447dc8f44621e9e435f70"
 }
