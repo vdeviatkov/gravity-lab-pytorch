@@ -105,6 +105,13 @@ class Trainer:
         self.exploration_rng = random.Random(seeds["epsilon_exploration"])
         self.transition_count = self.optimizer_update_count = self.completed_episode_count = 0
         self.active_elapsed = 0.0
+        # Best-checkpoint tracking: the online network is not monotonically improving (it can
+        # collapse late in a long curriculum run), so periodically evaluate it and keep the
+        # best-scoring snapshot on disk rather than trusting whatever is last. Score is
+        # (finish_rate, mean_progress) so mean_progress only breaks ties on finish_rate.
+        self.best_score: tuple[float, float] | None = None
+        self.best_metrics: dict[str, Any] | None = None
+        self._last_best_eval_active = 0.0
         self.latest_metrics: dict[str, Any] = {}
         self.resume_checkpoint = resume_checkpoint
         self.metadata = make_metadata(config, self.device)
@@ -145,6 +152,10 @@ class Trainer:
         self.metadata["resume_timestamps"] = [*prior.get("resume_timestamps", []), _now()]
         self.metadata["resumed_from"] = _portable_path(path)
         self._last_checkpoint_active = self.active_elapsed
+        self._last_best_eval_active = self.active_elapsed
+        best_score = saved.get("best_score")
+        self.best_score = tuple(best_score) if best_score is not None else None
+        self.best_metrics = saved.get("best_metrics")
         self._active_since = time.monotonic()
 
     def epsilon(self) -> float:
@@ -170,6 +181,8 @@ class Trainer:
             "rng_state": rng_state(), "config": self.config, "latest_metrics": self.latest_metrics,
             "normalization": self.config["normalization"], "metadata": self.metadata,
             "active_training_duration_seconds": self.current_active_elapsed(),
+            "best_score": list(self.best_score) if self.best_score is not None else None,
+            "best_metrics": self.best_metrics,
             "curriculum_state": {"environment_index": curriculum_index,
                                  "environment": environments[curriculum_index]},
             "saved_at": _now(),
@@ -195,6 +208,7 @@ class Trainer:
             "active_training_seconds": self.current_active_elapsed(),
             "epsilon": self.epsilon(), "latest_metrics": self.latest_metrics,
             "checkpoint": _portable_path(checkpoint or self.run_dir / "latest.pt"),
+            "best_score": list(self.best_score) if self.best_score is not None else None,
             "pid": os.getpid(), "device": str(self.device),
             "curriculum_environment_index": curriculum_index,
             "environment": environments[curriculum_index],
@@ -343,6 +357,27 @@ class Trainer:
                     if (self.current_active_elapsed() - self._last_checkpoint_active >=
                             self.config["experiment"]["checkpoint_interval_seconds"]):
                         self.save()
+                    best_eval_interval = float(
+                        self.config["experiment"].get("best_checkpoint_eval_interval_seconds", 90.0))
+                    if self.current_active_elapsed() - self._last_best_eval_active >= best_eval_interval:
+                        self._last_best_eval_active = self.current_active_elapsed()
+                        # The native engine allows only one active environment per process, so
+                        # the in-progress episode is abandoned for the duration of this eval.
+                        env.close()
+                        self.online.eval()
+                        eval_result = evaluate_model(self.online, self.config, episodes=1,
+                                                     device=self.device)
+                        self.online.train()
+                        score = (eval_result["finish_rate"], eval_result["mean_progress"])
+                        if self.best_score is None or score > self.best_score:
+                            self.best_score = score
+                            self.best_metrics = eval_result
+                            save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
+                            export_checkpoint(self.run_dir / "best.pt", self.run_dir / "best.gdp")
+                        env = open_environment(env_cfg)
+                        observation = env.reset(seeds["environment"] + self.completed_episode_count)[
+                            :self.observation_size]
+                        episode_reward, episode_length = 0.0, 0
                 graceful_reason = self._stop_signal or "duration-expired"
         except KeyboardInterrupt:
             graceful_reason = "KeyboardInterrupt"
@@ -377,6 +412,12 @@ class Trainer:
             raise failure
 
         evaluation = evaluate_model(self.online, self.config, device=self.device)
+        final_score = (evaluation["finish_rate"], evaluation["mean_progress"])
+        if self.best_score is None or final_score > self.best_score:
+            self.best_score = final_score
+            self.best_metrics = evaluation
+            save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
+            export_checkpoint(self.run_dir / "best.pt", self.run_dir / "best.gdp")
         summary = {
             "format": "gravity-lab-rl-summary-v1", "run_id": self.run_dir.name,
             "reason": graceful_reason, "training_start_timestamp": self.metadata["training_start_timestamp"],
@@ -384,10 +425,14 @@ class Trainer:
             "transition_count": self.transition_count,
             "optimizer_update_count": self.optimizer_update_count,
             "completed_episode_count": self.completed_episode_count,
-            "checkpoint_selection_rule": self.config["experiment"]["checkpoint_selection_rule"],
+            "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic "
+                                        "evaluation; see best_evaluation and paths.best_checkpoint",
             "final_evaluation": evaluation,
+            "best_evaluation": self.best_metrics,
             "paths": {"final_checkpoint": _portable_path(self.run_dir / "final.pt"),
                       "final_policy": _portable_path(self.run_dir / "final.gdp"),
+                      "best_checkpoint": _portable_path(self.run_dir / "best.pt"),
+                      "best_policy": _portable_path(self.run_dir / "best.gdp"),
                       "metrics": _portable_path(metrics_path),
                       "metadata": _portable_path(self.run_dir / "metadata.json")},
         }

@@ -29,9 +29,16 @@ def _print_summary(summary: dict[str, Any]) -> None:
     print(f"Run: {summary['run_id']}")
     print(f"Final checkpoint: {summary['paths']['final_checkpoint']}")
     print(f"Final policy: {summary['paths']['final_policy']}")
-    print("Evaluation: mean reward={:.6g}, mean progress={:.6g}, finish={:.1%}, crash={:.1%}, truncation={:.1%}".format(
+    print("Final evaluation: mean reward={:.6g}, mean progress={:.6g}, finish={:.1%}, crash={:.1%}, truncation={:.1%}".format(
         evaluation["mean_reward"], evaluation["mean_progress"], evaluation["finish_rate"],
         evaluation["crash_rate"], evaluation["truncation_rate"]))
+    best = summary.get("best_evaluation")
+    if best is not None:
+        print(f"Best checkpoint: {summary['paths']['best_checkpoint']}")
+        print(f"Best policy: {summary['paths']['best_policy']}")
+        print("Best evaluation: mean reward={:.6g}, mean progress={:.6g}, finish={:.1%}, crash={:.1%}, truncation={:.1%}".format(
+            best["mean_reward"], best["mean_progress"], best["finish_rate"],
+            best["crash_rate"], best["truncation_rate"]))
     print(f"Resume: gravity-lab-rl resume --run-id {summary['run_id']}")
     print(f"Play: ./scripts/play_latest.sh --run-id {summary['run_id']}")
 

@@ -2,17 +2,22 @@
 
 A head-to-head between the legacy 28-input network already on `main` and the new 36-input
 network with an obstacle-ray sensor, across all 30 tracks of the Easy/Medium/Pro curriculum —
-and a late-training collapse that the sensor run's final checkpoint did not survive.
+and a late-training collapse that the sensor run's final checkpoint did not survive, and the
+fix that now catches it.
 
 - **Legacy** — `origin/main`, commit `8671956`
-- **Sensor** — local branch, run `20260831-202029-13831`
-- **As of** 2026-09-01, sensor run complete (1,800s)
+- **Sensor (currently bundled)** — run `sensor_best_run_20260901`, best-checkpoint-tracked
+- **Sensor (historical, superseded)** — run `20260831-202029-13831`, the collapse case below
+- **As of** 2026-09-01
 
-> **Headline finding.** The sensor run's final checkpoint — the one this repository would
-> actually ship — has collapsed: 0% finish rate on all 30 tracks, including Intro, which it was
-> solving 93% of the time moments earlier in training. This happened in the last ~140 seconds of
-> a 1,800-second run. Everything below reports that collapse honestly rather than substituting a
-> healthier earlier reading for it.
+> **Update: the collapse is now caught automatically, and it happened again.** Section 5
+> documents a fix — periodic in-training evaluation that keeps the best-scoring checkpoint
+> instead of whatever exists when the clock runs out — and a second all-tracks run made with it.
+> That run's final checkpoint collapsed again (10.0% finish rate, down from a 23.3% peak),
+> confirming this is a real, recurring failure mode of this training loop, not a one-off. This
+> time the peak survived: `policies/classic_intro_sensor.gdp` is now that best checkpoint —
+> **7 of 30 tracks**, close to the legacy network's 8/30 at under half its training time. The
+> original collapse case (Sections 1–4) is kept below as the finding that motivated the fix.
 
 Both policies are Double DQN networks trained on the identical vendored physics engine, the
 identical 30-track Easy/Medium/Pro curriculum, and the identical reward. The only structural
@@ -285,12 +290,47 @@ and checkpoint the best-scoring network seen, not the last one. Without that saf
 final checkpoints is close to comparing lottery tickets — and this run is the demonstration of
 exactly that risk.
 
+## 5. The fix: best-checkpoint tracking, and what it caught the second time
+
+`Trainer` now evaluates the online network across all 30 tracks every
+`best_checkpoint_eval_interval_seconds` (default 90s) of active training, deterministically
+(ε=0), and immediately persists it as `best.pt`/`best.gdp` whenever its `(finish_rate,
+mean_progress)` beats the previous best — a full 30-track eval costs about 0.2s, so this is
+cheap. The in-progress episode is abandoned for the ~30 environment resets this requires (the
+native engine allows only one active environment per process), a negligible cost against a
+1,800s budget. `summary.json` now reports both `final_evaluation` and `best_evaluation`; the CLI
+prints both. This is a training-loop fix, independent of architecture — it benefits the legacy
+network exactly as much as the sensor network.
+
+A second all-tracks sensor run (`sensor_best_run_20260901`, same `configs/classic_all_tracks.json`,
+warm-started from the original single-track smoke policy, run under `scripts/train_watchdog.py`
+for hang protection) confirms the collapse is a **recurring** failure, not a one-off:
+
+| | Final checkpoint | Best checkpoint (tracked) |
+|---|---:|---:|
+| Finish rate | 10.0% (3/30) | **23.3% (7/30)** |
+| Mean progress | 0.333 | 0.454 |
+| Mean reward | — | 9.30 |
+| Crash rate | 43.3% | 66.7% |
+
+The run again degraded from a healthy peak to a much weaker final state — this time 23.3% → 10.0%
+rather than 20% → 0%, so the collapse's severity varies, but its direction doesn't: every
+best-vs-final comparison run so far has final worse than best. With the fix in place, the peak
+is what gets kept. **`policies/classic_intro_sensor.gdp` is now this best checkpoint**, solving
+Intro, Shorty, Slope, Knolls, Cliff, Hole, and Original — 7 of 30, one below the legacy network's
+8/30, reached in 1,800s of training (plus the original 60s smoke run it was warm-started from)
+against the legacy network's 4,287s-and-counting across multiple sweep continuations. Still not a
+generalist, and Medium/Pro tracks remain unsolved by either network, but a real, deployable,
+apples-to-apples result rather than an artifact of exactly when the clock happened to run out.
+
 ---
 
 Legacy figures read from `origin/main` commit `8671956` (`policies/classic_intro.gdp.json`,
-`configs/classic_all_tracks.json`). Sensor figures read from local run
-`20260831-202029-13831`, completed at its full 1,800s budget: final-checkpoint eval from
-`summary.json`'s `final_evaluation`; training-log rates from `metrics.jsonl` (19,449 episodes);
-the ~92%-of-budget interim eval and raw Q-value inspection were run manually against
-`latest.pt`/`final.pt` via `evaluate_model`, identical protocol and seed (2000007) to the legacy
-figure.
+`configs/classic_all_tracks.json`). Sections 1–4's sensor figures read from local run
+`20260831-202029-13831`: final-checkpoint eval from `summary.json`'s `final_evaluation`;
+training-log rates from `metrics.jsonl` (19,449 episodes); the ~92%-of-budget interim eval and
+raw Q-value inspection were run manually against `latest.pt`/`final.pt` via `evaluate_model`,
+identical protocol and seed (2000007) to the legacy figure. Section 5's figures read from local
+run `sensor_best_run_20260901`'s `summary.json` (`final_evaluation` and `best_evaluation`); the
+currently-bundled `policies/classic_intro_sensor.gdp` is that run's `best.gdp`, and its sidecar
+`policies/classic_intro_sensor.gdp.json` carries the same numbers.
