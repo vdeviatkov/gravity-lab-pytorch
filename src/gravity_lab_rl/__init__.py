@@ -2,6 +2,6 @@
 
 __version__ = "0.1.0"
 ENVIRONMENT_ID = "gravity-lab-classic-v1"
-OBSERVATION_SIZE = 28
+OBSERVATION_SIZE = 36
 ACTION_COUNT = 9
 

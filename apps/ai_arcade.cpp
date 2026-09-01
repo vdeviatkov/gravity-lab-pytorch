@@ -76,7 +76,9 @@ void validate(const gravity_lab::DenseQPolicy& policy) {
     if (policy.environment_id() != "gravity-lab-classic-v1" ||
         policy.observation_size() != gravity_lab::classic::kObservationSize ||
         policy.action_count() != static_cast<std::size_t>(gravity_lab::classic::kActionCount)) {
-        throw std::runtime_error("policy is incompatible with gravity-lab-classic-v1 (28 observations, 9 actions)");
+        throw std::runtime_error("policy is incompatible with gravity-lab-classic-v1 ("
+                                  + std::to_string(gravity_lab::classic::kObservationSize)
+                                  + " observations, 9 actions)");
     }
 }
 

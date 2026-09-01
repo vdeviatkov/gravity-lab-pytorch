@@ -5,8 +5,8 @@ from gravity_lab_rl.model import DenseQNetwork
 
 def test_model_dimensions():
     model = DenseQNetwork(11)
-    assert model(torch.zeros(4, 28)).shape == (4, 9)
-    assert model(torch.zeros(28)).shape == (9,)
+    assert model(torch.zeros(4, 36)).shape == (4, 9)
+    assert model(torch.zeros(36)).shape == (9,)
 
 
 def test_named_seed_is_deterministic_and_does_not_change_global_rng():

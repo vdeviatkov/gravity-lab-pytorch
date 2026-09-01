@@ -38,7 +38,7 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("invalid replay or batch size")
     norm = config["normalization"]
     if len(norm["input_scale"]) != OBSERVATION_SIZE or len(norm["input_bias"]) != OBSERVATION_SIZE:
-        raise ValueError("normalization must contain 28 scale and bias values")
+        raise ValueError(f"normalization must contain {OBSERVATION_SIZE} scale and bias values")
     for name, seed in config["seeds"].items():
         if not isinstance(seed, int) or not 0 <= seed < 2**63:
             raise ValueError(f"seed {name} must be a nonnegative integer below 2^63")

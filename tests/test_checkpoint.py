@@ -10,10 +10,10 @@ def test_checkpoint_round_trip_preserves_optimizer_and_replay(tmp_path):
     model = DenseQNetwork(11)
     target = DenseQNetwork(12)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss = model(torch.ones(2, 28)).sum()
+    loss = model(torch.ones(2, 36)).sum()
     loss.backward(); optimizer.step()
     replay = ReplayBuffer(10, 17)
-    replay.add(np.zeros(28), 3, 1.5, np.ones(28), False, True)
+    replay.add(np.zeros(36), 3, 1.5, np.ones(36), False, True)
     path = tmp_path / "latest.pt"
     save_checkpoint(path, {
         "online_network": model.state_dict(), "target_network": target.state_dict(),

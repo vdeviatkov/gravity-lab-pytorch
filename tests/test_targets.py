@@ -16,7 +16,7 @@ class FixedNetwork(nn.Module):
 def test_double_dqn_selects_online_action_and_uses_target_value():
     online = FixedNetwork([1.0, 5.0, 2.0])
     target = FixedNetwork([100.0, 7.0, 200.0])
-    result = double_dqn_targets(torch.tensor([2.0]), torch.zeros(1, 28),
+    result = double_dqn_targets(torch.tensor([2.0]), torch.zeros(1, 36),
                                 torch.tensor([False]), online, target, 0.5)
     assert torch.allclose(result, torch.tensor([5.5]))
 
@@ -27,7 +27,7 @@ def test_terminated_disables_bootstrap_but_truncation_does_not():
     rewards = torch.tensor([2.0, 2.0])
     terminated = torch.tensor([True, False])
     truncated = torch.tensor([False, True])
-    result = double_dqn_targets(rewards, torch.zeros(2, 28), terminated, online, target, 0.9)
+    result = double_dqn_targets(rewards, torch.zeros(2, 36), terminated, online, target, 0.9)
     assert truncated.tolist() == [False, True]  # documents the paired transition conditions
     assert torch.allclose(result, torch.tensor([2.0, 11.0]))
 

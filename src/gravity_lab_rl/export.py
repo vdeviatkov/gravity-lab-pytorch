@@ -37,7 +37,7 @@ def load_policy_into_model(model: DenseQNetwork, path: str | Path) -> dict[str, 
     if policy.environment_id != ENVIRONMENT_ID or policy.observation_size != OBSERVATION_SIZE or policy.action_count != ACTION_COUNT:
         raise ValueError("initial policy is incompatible with gravity-lab-classic-v1")
     if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != [128, 128, 9]:
-        raise ValueError("initial policy architecture must be 28x128x128x9")
+        raise ValueError(f"initial policy architecture must be {OBSERVATION_SIZE}x128x128x9")
     with torch.no_grad():
         model.input_scale.copy_(torch.tensor(policy.input_scale, dtype=model.input_scale.dtype,
                                              device=model.input_scale.device))

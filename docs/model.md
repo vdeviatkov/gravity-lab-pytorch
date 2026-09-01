@@ -10,16 +10,16 @@ training hyperparameter, for both bundled configs (`configs/classic_intro.json` 
 `DenseQNetwork` is a plain feed-forward Q-network — 3 fully-connected layers, ReLU between them:
 
 ```
-input (28)  -->  fc1 (128, ReLU)  -->  fc2 (128, ReLU)  -->  q (9, linear)
+input (36)  -->  fc1 (128, ReLU)  -->  fc2 (128, ReLU)  -->  q (9, linear)
 ```
 
 | Layer | Shape        | Activation | Parameters      |
 |-------|--------------|-----------|-----------------|
-| fc1   | 28 → 128     | ReLU       | 28*128 + 128 = 3,712 |
+| fc1   | 36 → 128     | ReLU       | 36*128 + 128 = 4,736 |
 | fc2   | 128 → 128    | ReLU       | 128*128 + 128 = 16,512 |
 | q     | 128 → 9      | linear     | 128*9 + 9 = 1,161 |
 
-Total: 21,385 parameters.
+Total: 22,409 parameters.
 
 Before the first layer, inputs are affine-transformed by a per-feature scale/bias that is stored
 as model buffers (not trained):
@@ -28,8 +28,8 @@ as model buffers (not trained):
 x = observation * input_scale + input_bias
 ```
 
-Both configs ship with `normalization.kind = "identity"` (`input_scale = [1]*28`,
-`input_bias = [0]*28`), so in the bundled setup this is a no-op — the network consumes the raw
+Both configs ship with `normalization.kind = "identity"` (`input_scale = [1]*36`,
+`input_bias = [0]*36`), so in the bundled setup this is a no-op — the network consumes the raw
 observation values described in section 2.
 
 **Initialization**: weights use Kaiming-uniform (`a = sqrt(5)`, matching `nn.Linear`'s own
@@ -42,8 +42,8 @@ online network every `target_update_every` optimizer steps).
 
 ## 2. Input — the observation vector
 
-`OBSERVATION_SIZE = 28` (`src/gravity_lab_rl/__init__.py`). The network's `forward()` takes a
-single `torch.float32` tensor of shape `(28,)` (or `(batch, 28)`). The values are produced by
+`OBSERVATION_SIZE = 36` (`src/gravity_lab_rl/__init__.py`). The network's `forward()` takes a
+single `torch.float32` tensor of shape `(36,)` (or `(batch, 36)`). The values are produced by
 `Environment::make_observation()` in `gravity-lab/src/classic_environment.cpp`:
 
 | Index | Meaning |
@@ -52,33 +52,66 @@ single `torch.float32` tensor of shape `(28,)` (or `(batch, 28)`). The values ar
 | 1 | `1 - progress` (index 0 mirrored) |
 | 2 | `1.0` if the race timer/track hasn't started yet, else `0.0` |
 | 3 | League, normalized: `league / 3.0` (league is 0–3: e.g. 100cc/175cc/220cc/250cc tiers) |
-| 4–7 | Body part 0 relative to the bike's center part: `dx`, `dy`, `field_382`, `field_383` |
-| 8–11 | Body part 1 relative to center: `dx`, `dy`, `field_382`, `field_383` |
-| 12–15 | Body part 2 relative to center: `dx`, `dy`, `field_382`, `field_383` |
-| 16–19 | Body part 3 relative to center: `dx`, `dy`, `field_382`, `field_383` |
-| 20–23 | Body part 4 relative to center: `dx`, `dy`, `field_382`, `field_383` |
-| 24–27 | Body part 5 (the center part itself) relative to center: `dx`, `dy`, `field_382`, `field_383` — always `(0, 0, field_382, field_383)` |
+| 4–7 | Physics point 0 (center reference) relative to itself: `dx`, `dy`, `field_382`, `field_383` — always `(0, 0, field_382, field_383)` |
+| 8–11 | Physics point 1 (front wheel) relative to center: `dx`, `dy`, `field_382`, `field_383` |
+| 12–15 | Physics point 2 (rear wheel) relative to center: `dx`, `dy`, `field_382`, `field_383` |
+| 16–19 | Physics point 3 (frame/rider constraint point) relative to center: `dx`, `dy`, `field_382`, `field_383` |
+| 20–23 | Physics point 4 (frame/rider constraint point) relative to center: `dx`, `dy`, `field_382`, `field_383` |
+| 24–27 | Physics point 5 (frame/rider constraint point) relative to center: `dx`, `dy`, `field_382`, `field_383` |
+| 28–35 | Obstacle-distance sensor: 8 rays cast from the center point (see below) |
 
-The 6 "body parts" (indices 0–5 in the engine's internal `field_29[]` array) are the bike's
-physics bodies (front wheel, rear wheel, chassis/frame, rider torso, etc. — the exact per-index
-identity lives in the decompiled physics engine and isn't named there either, but part 5 is always
-the reference/"center" body). For each part `i`, the 4 features are:
+The 6 physics points (indices 0–5 in the engine's internal `field_29[]` array) are documented in
+`gravity-lab/docs/classic-rl.md`: point 0 is the center reference, 1 is the front wheel, 2 is the
+rear wheel, and 3–5 are the remaining frame/rider constraint points from the original engine. For
+each point `i`, the 4 features are:
 
-- `dx = (part.x - center.x) / (65536 * 10)` — horizontal offset from the center body, in track
+- `dx = (point.x - center.x) / (65536 * 10)` — horizontal offset from the center point, in track
   units (fixed-point 16.16 internally, scaled down by 10 track-units-worth of fixed-point range)
-- `dy = (part.y - center.y) / (65536 * 10)` — vertical offset from the center body, same scaling
-- `field_382 / (65536 * 20)` — the part's per-axis motion/velocity-like state (x-component),
+- `dy = (point.y - center.y) / (65536 * 10)` — vertical offset from the center point, same scaling
+- `field_382 / (65536 * 20)` — the point's per-axis motion/velocity-like state (x-component),
   scaled down
-- `field_383 / (65536 * 20)` — the part's per-axis motion/velocity-like state (y-component),
+- `field_383 / (65536 * 20)` — the point's per-axis motion/velocity-like state (y-component),
   scaled down
 
 All values are plain `double`s; there is no clipping, so extreme physics states (e.g. right after
 a crash) can in principle produce values outside the "typical" range implied by the scaling
 constants above.
 
-**Practical input contract**: pass a length-28 `float32` array/tensor built from one call to
-`env.reset(...)` or `env.step(action)`. Do not reorder, rescale, or drop any of the 28 values —
-the trained weights (and the `.gdp` policy export) assume this exact layout.
+### Obstacle-distance sensor (indices 28–35)
+
+Indices 28–35 are a fixed 8-ray "lidar" sensor over the track's ground polyline, added so the
+network can see upcoming terrain instead of only the bike's current physics state. It is
+implemented in `Environment::Impl::make_observation()` / `cast_obstacle_ray()`
+(`gravity-lab/src/classic_environment.cpp`, constants in `gravity-lab/include/gravity_lab/classic_environment.hpp`):
+
+- The track's ground is a polyline of `(x, y)` points (`GameLevel::pointPositions`), strictly
+  increasing in `x`. Each consecutive pair of points is one **bounded** obstacle segment — a ray
+  only counts as hitting a segment if the intersection point falls within that segment's own two
+  endpoints (parameter `s ∈ [0, 1]`), never on the segment's infinite-line extension.
+- 8 rays are cast from the bike's center point (`kObstacleRayCount = 8`), evenly spaced by full
+  turns (45° apart). Ray 0 points along the direction of increasing progress (`+x`, i.e. toward
+  the finish); the rest follow counter-clockwise from there.
+- For each ray, only track segments near the bike's current position are searched
+  (`kObstacleSearchRadius = 64` segments on each side of the bike's current segment) — this bounds
+  the cost per step regardless of total track length.
+- Each output value is `min(hit_distance, kObstacleMaxRange) / kObstacleMaxRange`, i.e. `0.0` means
+  "touching an obstacle right now" and `1.0` means "nothing within sensor range" (either genuinely
+  no hit, or the nearest hit is at/beyond `kObstacleMaxRange`). `kObstacleMaxRange` is currently
+  `kFixed * 10.0 * 5.0` — five times the divisor already used for the position-delta features in
+  indices 4–27, so ray distances land in a comparable numeric range to the rest of the observation.
+
+All three constants (ray count, search radius, max range) are compile-time constants next to
+`kObservationSize` and are meant to be tuned empirically (e.g. via the AI Arcade viewer) rather
+than treated as fixed; changing any of them changes `kObservationSize`/`OBSERVATION_SIZE` and
+therefore requires retraining (see the compatibility note below).
+
+**Practical input contract**: pass a length-36 `float32` array/tensor built from one call to
+`env.reset(...)` or `env.step(action)`. Do not reorder, rescale, or drop any of the 36 values —
+the trained weights (and the `.gdp` policy export) assume this exact layout. **Compatibility
+note**: `OBSERVATION_SIZE` changed from 28 to 36 when the obstacle sensor was added. Any policy
+checkpoint or `.gdp` file trained against the old 28-value observation is no longer compatible and
+must be retrained; `load_policy_into_model`/`_policy_settings` reject a size mismatch with a clear
+error rather than silently misinterpreting the vector.
 
 ## 3. Output — Q-values and action selection
 
@@ -169,7 +202,7 @@ Trained checkpoints (`.pt`, containing optimizer/replay state) are exported to a
 `gravity-lab-dense-q-policy-v1` text format (`gravity-lab/python/gravity_lab/dense_policy.py`,
 `src/gravity_lab_rl/export.py`) for use outside PyTorch (e.g. the C++ viewer/arcade app). It stores,
 per layer: input/output size, activation name (`relu`/`tanh`/`linear`), weights, and biases, plus
-the top-level `input_scale`/`input_bias` vectors — i.e. exactly the same 28→128→128→9,
+the top-level `input_scale`/`input_bias` vectors — i.e. exactly the same 36→128→128→9,
 relu/relu/linear network described above, just serialized as plain text instead of a PyTorch
 state dict. A `.gdp.json` sidecar records provenance: architecture, activations, training
 environment, transition/update counts, and reference evaluation stats (see

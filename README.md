@@ -52,9 +52,10 @@ On native Windows, use the matching `.cmd` scripts:
 
 The one-minute run is a pipeline test, not a generally reliable policy.
 
-The bundled `policies/classic_intro.gdp` model was trained only on Easy track 2 (Slope) / 100cc.
-AI Arcade uses the newest local training run when one exists and otherwise falls back to this
-bundled model.
+The bundled `policies/classic_intro.gdp` model is a one-minute smoke-trained policy on Easy track
+0 (Intro) / 100cc, produced by `./scripts/train_one_minute.sh` — it clears that single track but
+is not a generally reliable policy. AI Arcade uses the newest local training run when one exists
+and otherwise falls back to this bundled model.
 
 ## Train
 
