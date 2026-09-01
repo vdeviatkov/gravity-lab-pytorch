@@ -1,7 +1,7 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro.gdp",
-  "policy_sha256": "b655632ea5bc7d62b5fb80e106b930fa9ff12c8bff8023737ff7c25f2a03eb4a",
+  "policy_sha256": "3db936f349b203358e545cd121c7d9e389506ea5ff946509ea56e4dececa777a",
   "environment_id": "gravity-lab-classic-v1",
   "observation_size": 28,
   "action_count": 9,
@@ -16,19 +16,19 @@
     "max_episode_steps": 2000
   },
   "training": {
-    "active_duration_seconds": 3183.2,
-    "transitions": 5392188,
-    "optimizer_updates": 1345548,
-    "note": "Best-of-population result from a parallel Double DQN hyperparameter sweep (lr=0.0005, epsilon_decay_transitions=2000000, batch_size=128) over the full Easy/Medium/Pro all-tracks curriculum, warm-started from the previous classic_intro.gdp"
+    "active_duration_seconds": 4287.3,
+    "transitions": 7686580,
+    "optimizer_updates": 1919146,
+    "note": "Best-of-population result from a parallel Double DQN hyperparameter sweep (lr=0.0003, epsilon_decay_transitions=2000000, batch_size=128) over the full Easy/Medium/Pro all-tracks curriculum, warm-started from the previous classic_intro.gdp"
   },
   "reference_evaluation": {
     "episodes": 30,
-    "mean_reward": 10.404810443115222,
-    "mean_progress": 0.4834936195838601,
+    "mean_reward": 11.00498548177084,
+    "mean_progress": 0.5090950892529447,
     "finish_rate": 0.26666666666666666,
-    "crash_rate": 0.6333333333333333,
-    "truncation_rate": 0.1,
-    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), not a single-track result. Solves 8/10 Easy tracks (Intro, Shorty, Slope, Crackle, Knolls, Cliff, Hole, Original); Medium/Pro tracks are not yet finished but several show substantial partial progress."
+    "crash_rate": 0.7,
+    "truncation_rate": 0.03333333333333333,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), not a single-track result. Solves 7/10 Easy tracks (Intro, Slope, Crackle, Knolls, Cliff, Hole, Original) plus Medium track Spikehops; other Medium/Pro tracks are not yet finished but several show substantial partial progress."
   },
   "gravity_lab_commit": "a893f5ba0de5fd5a82f447dc8f44621e9e435f70"
 }
