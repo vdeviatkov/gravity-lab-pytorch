@@ -1,7 +1,7 @@
 {
   "format": "gravity-lab-bundled-policy-v1",
   "policy": "classic_intro_32ray_accel.gdp",
-  "policy_sha256": "353c21450a05190257be50135739bc413aeeb6ba7de0e2e3e93b746302aa6069",
+  "policy_sha256": "367eed087bd45cbf94bd22e2909e1a5220fd91865cb734bb14980a6d25659a0e",
   "environment_id": "gravity-lab-classic-v1",
   "observation_size": 72,
   "action_count": 9,
@@ -18,19 +18,19 @@
     "obstacle_ray_count": 32
   },
   "training": {
-    "active_duration_seconds": 60.000433292007074,
-    "transitions": 313940,
-    "optimizer_updates": 77236,
-    "note": "One-minute smoke-training run (configs/classic_intro_32ray_accel.json via `gravity-lab-rl train --duration-seconds 60`) on Easy track 0 (Intro) / 100cc only. Same setup as the original 8-ray sensor smoke run, but with the obstacle-ray sensor widened from 8 to 32 rays and a new per-component acceleration region added (28 base + 32 rays + 12 acceleration = 72 inputs). Best-checkpoint tracking found no improvement over the final state in this short a run, so best.gdp and final.gdp are identical. This is a pipeline smoke result on a single easy track, not a general performance claim."
+    "active_duration_seconds": 2745.6,
+    "transitions": 11972648,
+    "optimizer_updates": 2990250,
+    "note": "All-tracks curriculum run (configs/classic_all_tracks_32ray_accel.json, run sensor32_accel_all_tracks_20260901, warm-started from the single-track 32ray+accel smoke policy) over the full Easy/Medium/Pro curriculum, using best-checkpoint tracking (periodic deterministic evaluation, keep the best-scoring network rather than whatever's last). Manually stopped at 2,745.6s active (control-stop) rather than the full 3,600s target; the run's own final checkpoint had regressed to 3.3% finish rate by the stop point, confirming the same late-training collapse tendency seen in earlier runs. This bundled policy is that run's best checkpoint, unaffected by the later regression. See docs/training-runs.md."
   },
   "reference_evaluation": {
-    "episodes": 5,
-    "mean_reward": 21.657630249023434,
-    "mean_progress": 0.9696529371321467,
-    "finish_rate": 1.0,
-    "crash_rate": 0.0,
-    "truncation_rate": 0.0,
-    "note": "Deterministic same-track evaluation (Easy track 0, Intro); not a general performance claim across other tracks or leagues."
+    "episodes": 30,
+    "mean_reward": 9.664955938720706,
+    "mean_progress": 0.43710554707154153,
+    "finish_rate": 0.23333333333333334,
+    "crash_rate": 0.4,
+    "truncation_rate": 0.36666666666666664,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), deterministic, seed 2000007. Solves 7/30 tracks. Captured mid-run; see docs/training-runs.md for the run's final result."
   },
-  "gravity_lab_commit": "7ff8d9204bcc8161d9c88b4e96cd0d1a5cb45da8"
+  "gravity_lab_commit": "7210e52967b4835ad725ee69291507ac24c8874f"
 }

@@ -5,6 +5,14 @@ This document describes the neural network used to play `gravity-lab-classic-v1`
 training hyperparameter, for both bundled configs (`configs/classic_intro.json` and
 `configs/classic_all_tracks.json`).
 
+> **This document describes only the 36-wide, 8-ray configuration.** The observation width is no
+> longer fixed: the engine now supports 28 (no sensor), 28+N for any ray count N up to 32, or the
+> full 72 (32 rays + acceleration) — see `gravity-lab/docs/classic-rl.md` for the current region
+> layout, `docs/policy-comparison.md` for the legacy-vs-sensor comparison, and
+> `docs/training-runs.md` for a table of every trained checkpoint and its width. The reward
+> formula in Section 4 also predates a per-step-penalty rebalance; see `classic-rl.md` for the
+> current value.
+
 ## 1. Architecture
 
 `DenseQNetwork` is a plain feed-forward Q-network — 3 fully-connected layers, ReLU between them:
