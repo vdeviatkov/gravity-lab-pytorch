@@ -153,7 +153,11 @@ class Trainer:
         self.metadata["resume_timestamps"] = [*prior.get("resume_timestamps", []), _now()]
         self.metadata["resumed_from"] = _portable_path(path)
         self._last_checkpoint_active = self.active_elapsed
-        self._last_best_eval_active = self.active_elapsed
+        # Restore how much active time had actually elapsed since the last best-checkpoint eval,
+        # not "an eval just happened" (self.active_elapsed) -- a watchdog that restarts often
+        # (e.g. recovering from the native engine's physics stall) would otherwise reset this
+        # countdown on every resume and could postpone the eval indefinitely.
+        self._last_best_eval_active = float(saved.get("last_best_eval_active", self.active_elapsed))
         best_score = saved.get("best_score")
         self.best_score = tuple(best_score) if best_score is not None else None
         self.best_metrics = saved.get("best_metrics")
@@ -184,6 +188,7 @@ class Trainer:
             "active_training_duration_seconds": self.current_active_elapsed(),
             "best_score": list(self.best_score) if self.best_score is not None else None,
             "best_metrics": self.best_metrics,
+            "last_best_eval_active": self._last_best_eval_active,
             "curriculum_state": {"environment_index": curriculum_index,
                                  "environment": environments[curriculum_index]},
             "saved_at": _now(),

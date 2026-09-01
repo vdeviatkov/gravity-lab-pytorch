@@ -72,5 +72,19 @@ For idling-forever to discount to *more* negative than one crash:
 `kPerStepPenalty / (1 - γ) > kCrashPenalty` → `kPerStepPenalty > kCrashPenalty × (1 - γ) = 5.0 × 0.01 = 0.05`.
 
 Set `kPerStepPenalty = 0.1` (2× the breakeven point, asymptotic idle cost ≈ `-10`, clearly worse
-than one `-5.0` crash), warm-started from run #6's best again. Result pending — see the table row
-above once run #8 completes.
+than one `-5.0` crash), warm-started from run #6's best again.
+
+**First attempt at run #8 hit a second, unrelated bug**: `Trainer._restore()` reset
+`_last_best_eval_active` to `self.active_elapsed` on every resume — i.e. "an eval just happened"
+— instead of preserving how much active time had actually passed since the real last eval. This
+run's warm-started policy happened to trigger the native physics-engine stall (the same one
+`scripts/train_watchdog.py` exists for) unusually often, and each stall-triggered restart reset
+the countdown before it ever reached `best_checkpoint_eval_interval_seconds` (90s) — so 234s of
+active training passed with the best-checkpoint eval never firing even once. Fixed by persisting
+`last_best_eval_active` itself in the checkpoint payload and restoring that value instead of
+`active_elapsed`. Verified with a short train/resume smoke test: with the bug, an eval due at
+cumulative 20s would be pushed to 28s (past a 25s run, i.e. never); fixed, it fires at exactly
+20s across the resume boundary. This bug is orthogonal to the reward change and would have
+affected any run that stalls-and-restarts more often than its eval interval.
+
+Run #8 relaunched after this fix. Result pending — see the table row above once it completes.
