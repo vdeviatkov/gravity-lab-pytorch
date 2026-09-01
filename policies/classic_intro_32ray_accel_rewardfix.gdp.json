@@ -1,0 +1,36 @@
+{
+  "format": "gravity-lab-bundled-policy-v1",
+  "policy": "classic_intro_32ray_accel_rewardfix.gdp",
+  "policy_sha256": "1ba22bbf087263dc08b4d53716f6bd344135fc27ca2c423a4a3fa18468048748",
+  "environment_id": "gravity-lab-classic-v1",
+  "observation_size": 72,
+  "action_count": 9,
+  "architecture": [72, 128, 128, 9],
+  "activations": ["relu", "relu", "linear"],
+  "normalization": "identity",
+  "obstacle_ray_count": 32,
+  "training_environment": {
+    "level_group": 0,
+    "track": 0,
+    "league": 0,
+    "frame_skip": 2,
+    "max_episode_steps": 2000,
+    "obstacle_ray_count": 32
+  },
+  "training": {
+    "active_duration_seconds": 1175.9,
+    "transitions": 4944268,
+    "optimizer_updates": 1233568,
+    "note": "IN-PROGRESS all-tracks curriculum run (configs/classic_all_tracks_32ray_accel.json, run sensor32_accel_rewardfix_20260901) under the rebalanced reward (per-step penalty raised from 0.001 to 0.003, so a full truncated episode costs more than one crash -- see gravity-lab/docs/classic-rl.md). Warm-started from policies/classic_intro_32ray_accel.gdp (the pre-reward-fix best, 7/30). This snapshot is mid-recalibration: it dipped to 4/30 immediately after the reward change (Q-values were calibrated to the old reward scale) and has recovered to 6/30 so far, not yet back past its 7/30 starting point. Deployed for hands-on comparison against classic_intro_32ray_accel.gdp (old reward) while training continues; expect this file to be replaced once the run finishes."
+  },
+  "reference_evaluation": {
+    "episodes": 30,
+    "mean_reward": null,
+    "mean_progress": 0.4342936836953472,
+    "finish_rate": 0.2,
+    "crash_rate": null,
+    "truncation_rate": null,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), deterministic, seed 2000007. Solves 6/30 tracks. Captured mid-run, under the new reward; see docs/training-runs.md for the run's final result."
+  },
+  "gravity_lab_commit": "7210e52967b4835ad725ee69291507ac24c8874f"
+}
