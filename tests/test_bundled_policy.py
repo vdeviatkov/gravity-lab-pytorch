@@ -4,7 +4,12 @@ from pathlib import Path
 
 from gravity_lab import DenseQPolicy
 
-from gravity_lab_rl import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
+from gravity_lab_rl import (
+    ACTION_COUNT,
+    BASE_OBSERVATION_SIZE,
+    DEFAULT_OBSTACLE_RAY_COUNT,
+    ENVIRONMENT_ID,
+)
 from gravity_lab_rl.playback import bundled_policy
 import gravity_lab_rl.playback as playback
 
@@ -26,7 +31,8 @@ def test_bundled_sensor_policy_contract_and_checksum():
     policy = DenseQPolicy.load(path)
     metadata = json.loads(path.with_suffix(".gdp.json").read_text(encoding="utf-8"))
     assert policy.environment_id == ENVIRONMENT_ID
-    assert policy.observation_size == OBSERVATION_SIZE
+    # This bundled policy is the 8-ray obstacle-sensor network (no acceleration).
+    assert policy.observation_size == BASE_OBSERVATION_SIZE + DEFAULT_OBSTACLE_RAY_COUNT
     assert policy.action_count == ACTION_COUNT
     assert hashlib.sha256(path.read_bytes()).hexdigest() == metadata["policy_sha256"]
 

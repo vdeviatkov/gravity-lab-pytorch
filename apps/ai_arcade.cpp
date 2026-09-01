@@ -73,18 +73,30 @@ Options parse(int argc, char** argv) {
 }
 
 void validate(const gravity_lab::DenseQPolicy& policy) {
-    // A policy trained before the obstacle-ray sensor was added declares kBaseObservationSize
-    // (28) observations; those are a compatible prefix of the current kObservationSize (36)
-    // vector, so both widths are accepted here and truncated to size when actually stepping.
+    // A policy trained before the obstacle-ray sensor (or before acceleration) was added
+    // declares a smaller observation_size; every prefix length in
+    // [kBaseObservationSize, kObservationSize] is a compatible, unchanged prefix of the current
+    // vector (see classic_environment.hpp), so all of them are accepted here and the observation
+    // is truncated to the policy's own size when actually stepping.
     if (policy.environment_id() != "gravity-lab-classic-v1" ||
-        (policy.observation_size() != gravity_lab::classic::kBaseObservationSize &&
-         policy.observation_size() != gravity_lab::classic::kObservationSize) ||
+        policy.observation_size() < gravity_lab::classic::kBaseObservationSize ||
+        policy.observation_size() > gravity_lab::classic::kObservationSize ||
         policy.action_count() != static_cast<std::size_t>(gravity_lab::classic::kActionCount)) {
         throw std::runtime_error("policy is incompatible with gravity-lab-classic-v1 ("
                                   + std::to_string(gravity_lab::classic::kBaseObservationSize)
-                                  + " or " + std::to_string(gravity_lab::classic::kObservationSize)
+                                  + " to " + std::to_string(gravity_lab::classic::kObservationSize)
                                   + " observations, 9 actions)");
     }
+}
+
+// The number of obstacle rays to compute so a policy's own observation region is populated with
+// real values: derived from its declared observation_size (see classic_environment.hpp for the
+// region layout), clamped to a valid ray count regardless of whether the policy uses any rays.
+std::uint32_t obstacle_ray_count_for(const gravity_lab::DenseQPolicy& policy) {
+    const auto base = gravity_lab::classic::kBaseObservationSize;
+    const auto max_rays = gravity_lab::classic::kMaxObstacleRayCount;
+    const std::size_t requested = policy.observation_size() > base ? policy.observation_size() - base : 0;
+    return static_cast<std::uint32_t>(std::clamp<std::size_t>(requested, 1, max_rays));
 }
 
 using Catalog = std::array<std::vector<std::string>, 3>;
@@ -258,7 +270,8 @@ void play(const Options& options, const Selection& selection,
           const gravity_lab::DenseQPolicy& policy) {
     gravity_lab::classic::Config config{
         static_cast<std::uint32_t>(selection.group), static_cast<std::uint32_t>(selection.track),
-        static_cast<std::uint32_t>(selection.league), options.frame_skip, options.max_steps, options.seed};
+        static_cast<std::uint32_t>(selection.league), options.frame_skip, options.max_steps, options.seed,
+        obstacle_ray_count_for(policy)};
     gravity_lab::classic::Environment environment(config);
     gravity_lab::classic::Renderer renderer(
         environment, "Gravity Lab AI - " + environment.track_name() + " - " +

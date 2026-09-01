@@ -16,6 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from . import DEFAULT_OBSTACLE_RAY_COUNT
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
 from .config import curriculum_environment_index, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
@@ -285,7 +286,8 @@ class Trainer:
                     classic = ClassicConfig(
                         configuration["level_group"], configuration["track"],
                         configuration["league"], configuration["frame_skip"],
-                        configuration["max_episode_steps"], seeds["environment"])
+                        configuration["max_episode_steps"], seeds["environment"],
+                        configuration.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
                     return ClassicGravityEnv(classic, configuration.get("level_pack"))
 
                 env = open_environment(env_cfg)

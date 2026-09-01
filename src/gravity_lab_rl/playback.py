@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from . import BASE_OBSERVATION_SIZE, OBSERVATION_SIZE
+from .config import valid_observation_size
 from .checkpoint import load_checkpoint
 from .control import resolve_run
 from .export import export_checkpoint
@@ -79,11 +80,11 @@ def _policy_settings(path: str | Path) -> tuple[Path, dict[str, Any], int]:
         raise FileNotFoundError(f"policy not found: {policy_path}")
     loaded = DenseQPolicy.load(policy_path)
     if (loaded.environment_id != "gravity-lab-classic-v1"
-            or loaded.observation_size not in (BASE_OBSERVATION_SIZE, OBSERVATION_SIZE)
+            or not valid_observation_size(loaded.observation_size)
             or loaded.action_count != 9):
         raise ValueError(
             "policy must target gravity-lab-classic-v1 with "
-            f"{BASE_OBSERVATION_SIZE} or {OBSERVATION_SIZE} observations and 9 actions"
+            f"{BASE_OBSERVATION_SIZE} to {OBSERVATION_SIZE} observations and 9 actions"
         )
     environment: dict[str, Any] = {
         "level_group": 0, "track": 0, "league": 0, "frame_skip": 2,

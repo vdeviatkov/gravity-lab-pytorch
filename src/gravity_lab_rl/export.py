@@ -8,8 +8,9 @@ from typing import Any
 
 from gravity_lab import DenseLayer, DenseQPolicy
 
-from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
+from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, MAX_OBSTACLE_RAY_COUNT, OBSERVATION_SIZE
 from .checkpoint import load_checkpoint
+from .config import valid_observation_size
 from .model import DenseQNetwork
 
 
@@ -24,7 +25,7 @@ def policy_from_model(model: DenseQNetwork) -> DenseQPolicy:
             DenseLayer.from_values(model.q.weight, model.q.bias, "linear"),
         ],
     )
-    if policy.observation_size not in (BASE_OBSERVATION_SIZE, OBSERVATION_SIZE) or policy.action_count != ACTION_COUNT:
+    if not valid_observation_size(policy.observation_size) or policy.action_count != ACTION_COUNT:
         raise ValueError("exported policy dimensions do not match the environment")
     return policy
 
@@ -35,12 +36,13 @@ def load_policy_into_model(model: DenseQNetwork, path: str | Path) -> dict[str, 
 
     policy = DenseQPolicy.load(path)
     if (policy.environment_id != ENVIRONMENT_ID
-            or policy.observation_size not in (BASE_OBSERVATION_SIZE, OBSERVATION_SIZE)
+            or not valid_observation_size(policy.observation_size)
             or policy.action_count != ACTION_COUNT):
         raise ValueError("initial policy is incompatible with gravity-lab-classic-v1")
     if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != [128, 128, 9]:
         raise ValueError(
-            f"initial policy architecture must be {BASE_OBSERVATION_SIZE}x128x128x9 or "
+            f"initial policy architecture must be {BASE_OBSERVATION_SIZE}x128x128x9, "
+            f"({BASE_OBSERVATION_SIZE}+1..{MAX_OBSTACLE_RAY_COUNT})x128x128x9, or "
             f"{OBSERVATION_SIZE}x128x128x9"
         )
     if policy.observation_size != len(model.input_scale):

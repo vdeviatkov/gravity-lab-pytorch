@@ -5,6 +5,7 @@ from typing import Any
 
 import torch
 
+from . import DEFAULT_OBSTACLE_RAY_COUNT
 from .config import curriculum_environments
 from .model import DenseQNetwork
 
@@ -27,6 +28,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
             level_group=env_cfg["level_group"], track=env_cfg["track"], league=env_cfg["league"],
             frame_skip=env_cfg["frame_skip"], max_episode_steps=env_cfg["max_episode_steps"],
             seed=actual_seed,
+            obstacle_ray_count=env_cfg.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT),
         )
         # The engine allows one active environment per process, so evaluation opens these
         # sequentially and closes each before advancing to the next track.

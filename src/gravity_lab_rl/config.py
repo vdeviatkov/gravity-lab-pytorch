@@ -5,7 +5,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
+from . import (
+    ACTION_COUNT,
+    BASE_OBSERVATION_SIZE,
+    DEFAULT_OBSTACLE_RAY_COUNT,
+    ENVIRONMENT_ID,
+    MAX_OBSTACLE_RAY_COUNT,
+    OBSERVATION_SIZE,
+    OBSTACLE_REGION_END,
+)
+
+
+def valid_observation_size(size: int) -> bool:
+    """True if `size` is a real region boundary: base-only, base+some ray count, or full width."""
+    if size == BASE_OBSERVATION_SIZE or size == OBSERVATION_SIZE:
+        return True
+    return BASE_OBSERVATION_SIZE < size <= OBSTACLE_REGION_END
 
 
 def default_config_path() -> Path:
@@ -31,18 +46,22 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError("invalid track or frame_skip")
     if int(env["max_episode_steps"]) <= 0:
         raise ValueError("max_episode_steps must be positive")
+    ray_count = int(env.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
+    if not 1 <= ray_count <= MAX_OBSTACLE_RAY_COUNT:
+        raise ValueError(f"obstacle_ray_count must be in [1, {MAX_OBSTACLE_RAY_COUNT}]")
     algo = config["algorithm"]
     if list(algo["hidden_sizes"]) != [128, 128]:
         raise ValueError("v1 portable architecture requires hidden_sizes [128, 128]")
     if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
         raise ValueError("invalid replay or batch size")
     norm = config["normalization"]
-    if len(norm["input_scale"]) != len(norm["input_bias"]) or len(norm["input_scale"]) not in (
-        BASE_OBSERVATION_SIZE, OBSERVATION_SIZE
+    if len(norm["input_scale"]) != len(norm["input_bias"]) or not valid_observation_size(
+        len(norm["input_scale"])
     ):
         raise ValueError(
-            f"normalization must contain {BASE_OBSERVATION_SIZE} or {OBSERVATION_SIZE} "
-            "matching scale and bias values"
+            f"normalization must contain {BASE_OBSERVATION_SIZE} matching scale and bias values "
+            f"(optionally +1..{MAX_OBSTACLE_RAY_COUNT} for obstacle rays), or {OBSERVATION_SIZE} "
+            "for the full sensor+acceleration vector"
         )
     for name, seed in config["seeds"].items():
         if not isinstance(seed, int) or not 0 <= seed < 2**63:

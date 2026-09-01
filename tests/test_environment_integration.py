@@ -20,5 +20,5 @@ def test_classic_environment_smoke():
                                          max_episode_steps=10, seed=7)) as env:
         observation = env.reset(7)
         result = env.step(1)
-        assert len(observation) == 36 and len(result.observation) == 36
+        assert len(observation) == 72 and len(result.observation) == 72
         assert isinstance(result.reward, float)

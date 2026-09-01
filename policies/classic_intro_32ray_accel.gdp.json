@@ -1,0 +1,36 @@
+{
+  "format": "gravity-lab-bundled-policy-v1",
+  "policy": "classic_intro_32ray_accel.gdp",
+  "policy_sha256": "353c21450a05190257be50135739bc413aeeb6ba7de0e2e3e93b746302aa6069",
+  "environment_id": "gravity-lab-classic-v1",
+  "observation_size": 72,
+  "action_count": 9,
+  "architecture": [72, 128, 128, 9],
+  "activations": ["relu", "relu", "linear"],
+  "normalization": "identity",
+  "obstacle_ray_count": 32,
+  "training_environment": {
+    "level_group": 0,
+    "track": 0,
+    "league": 0,
+    "frame_skip": 2,
+    "max_episode_steps": 2000,
+    "obstacle_ray_count": 32
+  },
+  "training": {
+    "active_duration_seconds": 60.000433292007074,
+    "transitions": 313940,
+    "optimizer_updates": 77236,
+    "note": "One-minute smoke-training run (configs/classic_intro_32ray_accel.json via `gravity-lab-rl train --duration-seconds 60`) on Easy track 0 (Intro) / 100cc only. Same setup as the original 8-ray sensor smoke run, but with the obstacle-ray sensor widened from 8 to 32 rays and a new per-component acceleration region added (28 base + 32 rays + 12 acceleration = 72 inputs). Best-checkpoint tracking found no improvement over the final state in this short a run, so best.gdp and final.gdp are identical. This is a pipeline smoke result on a single easy track, not a general performance claim."
+  },
+  "reference_evaluation": {
+    "episodes": 5,
+    "mean_reward": 21.657630249023434,
+    "mean_progress": 0.9696529371321467,
+    "finish_rate": 1.0,
+    "crash_rate": 0.0,
+    "truncation_rate": 0.0,
+    "note": "Deterministic same-track evaluation (Easy track 0, Intro); not a general performance claim across other tracks or leagues."
+  },
+  "gravity_lab_commit": "7ff8d9204bcc8161d9c88b4e96cd0d1a5cb45da8"
+}
