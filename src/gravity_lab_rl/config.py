@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import ACTION_COUNT, ENVIRONMENT_ID, OBSERVATION_SIZE
+from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
 
 
 def default_config_path() -> Path:
@@ -37,8 +37,13 @@ def validate_config(config: dict[str, Any]) -> None:
     if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
         raise ValueError("invalid replay or batch size")
     norm = config["normalization"]
-    if len(norm["input_scale"]) != OBSERVATION_SIZE or len(norm["input_bias"]) != OBSERVATION_SIZE:
-        raise ValueError(f"normalization must contain {OBSERVATION_SIZE} scale and bias values")
+    if len(norm["input_scale"]) != len(norm["input_bias"]) or len(norm["input_scale"]) not in (
+        BASE_OBSERVATION_SIZE, OBSERVATION_SIZE
+    ):
+        raise ValueError(
+            f"normalization must contain {BASE_OBSERVATION_SIZE} or {OBSERVATION_SIZE} "
+            "matching scale and bias values"
+        )
     for name, seed in config["seeds"].items():
         if not isinstance(seed, int) or not 0 <= seed < 2**63:
             raise ValueError(f"seed {name} must be a nonnegative integer below 2^63")
@@ -59,6 +64,11 @@ def validate_config(config: dict[str, Any]) -> None:
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")
+
+
+def model_input_size(config: dict[str, Any]) -> int:
+    """Observation width this config's model consumes (BASE_OBSERVATION_SIZE or OBSERVATION_SIZE)."""
+    return len(config["normalization"]["input_scale"])
 
 
 def curriculum_environments(config: dict[str, Any]) -> list[dict[str, Any]]:

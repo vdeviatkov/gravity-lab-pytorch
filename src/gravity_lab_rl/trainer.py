@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
-from .config import curriculum_environment_index, curriculum_environments
+from .config import curriculum_environment_index, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import double_dqn_targets, evaluate_model
 from .export import export_checkpoint, load_policy_into_model
@@ -99,7 +99,9 @@ class Trainer:
         self.target.load_state_dict(self.online.state_dict())
         self.target.eval()
         self.optimizer = torch.optim.Adam(self.online.parameters(), lr=algo["learning_rate"])
-        self.replay = ReplayBuffer(algo["replay_capacity"], seeds["replay_sampling"])
+        self.observation_size = model_input_size(self.config)
+        self.replay = ReplayBuffer(algo["replay_capacity"], seeds["replay_sampling"],
+                                   observation_size=self.observation_size)
         self.exploration_rng = random.Random(seeds["epsilon_exploration"])
         self.transition_count = self.optimizer_update_count = self.completed_episode_count = 0
         self.active_elapsed = 0.0
@@ -274,7 +276,12 @@ class Trainer:
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name
-                observation = env.reset(seeds["environment"] + self.completed_episode_count)
+                # The environment always returns OBSERVATION_SIZE values; truncate to this
+                # model's actual input width (BASE_OBSERVATION_SIZE for the legacy network,
+                # OBSERVATION_SIZE for the obstacle-sensor network) via the shared compatible
+                # prefix.
+                observation = env.reset(seeds["environment"] + self.completed_episode_count)[
+                    :self.observation_size]
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 while self.current_active_elapsed() < duration and not self._stop_signal:
                     if self._pause_if_requested():
@@ -288,9 +295,10 @@ class Trainer:
                                                               device=self.device))
                             action = int(torch.argmax(values).item())
                     step = env.step(action)
-                    self.replay.add(observation, action, step.reward, step.observation,
+                    next_observation = step.observation[:self.observation_size]
+                    self.replay.add(observation, action, step.reward, next_observation,
                                     step.terminated, step.truncated)
-                    observation = step.observation
+                    observation = next_observation
                     self.transition_count += 1
                     episode_reward += step.reward
                     episode_length += 1
@@ -322,7 +330,8 @@ class Trainer:
                             env_cfg = environments[active_index]
                             env = open_environment(env_cfg)
                             track_name = env.track_name
-                        observation = env.reset(seeds["environment"] + self.completed_episode_count)
+                        observation = env.reset(seeds["environment"] + self.completed_episode_count)[
+                            :self.observation_size]
                         episode_reward, episode_length = 0.0, 0
                     now = time.monotonic()
                     if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:

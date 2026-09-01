@@ -17,6 +17,9 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
     first_seed = int(seed if seed is not None else config["seeds"]["final_evaluation"])
     rows: list[dict[str, Any]] = []
     model.eval()
+    # The environment always returns OBSERVATION_SIZE values; truncate to this model's actual
+    # input width via the shared compatible prefix (see docs/policy-comparison.md).
+    observation_size = len(model.input_scale)
     environments = curriculum_environments(config)
     for environment_index, env_cfg in enumerate(environments):
         actual_seed = first_seed + environment_index * count
@@ -31,7 +34,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
             track_name = env.track_name
             for episode in range(count):
                 episode_seed = actual_seed + episode
-                observation = env.reset(episode_seed)
+                observation = env.reset(episode_seed)[:observation_size]
                 reward_total = 0.0
                 last = None
                 for length in range(1, env_cfg["max_episode_steps"] + 1):
@@ -41,7 +44,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
                         action = int(torch.argmax(q_values).item())
                     last = env.step(action)
                     reward_total += last.reward
-                    observation = last.observation
+                    observation = last.observation[:observation_size]
                     if last.terminated or last.truncated:
                         break
                 assert last is not None

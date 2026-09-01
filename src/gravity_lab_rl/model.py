@@ -10,11 +10,17 @@ class DenseQNetwork(nn.Module):
     def __init__(self, initialization_seed: int, input_scale: list[float] | None = None,
                  input_bias: list[float] | None = None) -> None:
         super().__init__()
+        # The observation width is derived from the normalization vectors rather than fixed to
+        # OBSERVATION_SIZE, so a model can target either the legacy 28-value observation or the
+        # current OBSERVATION_SIZE (36, with the obstacle-ray sensor); the environment's raw
+        # observation is a superset, and the leading `input_size` values are always a compatible
+        # prefix (see docs/policy-comparison.md).
+        input_size = len(input_scale) if input_scale is not None else OBSERVATION_SIZE
         # Linear constructors initialize parameters, so isolate even that temporary work from
         # PyTorch's process-global RNG before applying our named local-generator initialization.
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(initialization_seed)
-            self.fc1 = nn.Linear(OBSERVATION_SIZE, 128)
+            self.fc1 = nn.Linear(input_size, 128)
             self.fc2 = nn.Linear(128, 128)
             self.q = nn.Linear(128, ACTION_COUNT)
         self.register_buffer("input_scale", torch.tensor(input_scale or [1.0] * OBSERVATION_SIZE,

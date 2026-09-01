@@ -73,11 +73,16 @@ Options parse(int argc, char** argv) {
 }
 
 void validate(const gravity_lab::DenseQPolicy& policy) {
+    // A policy trained before the obstacle-ray sensor was added declares kBaseObservationSize
+    // (28) observations; those are a compatible prefix of the current kObservationSize (36)
+    // vector, so both widths are accepted here and truncated to size when actually stepping.
     if (policy.environment_id() != "gravity-lab-classic-v1" ||
-        policy.observation_size() != gravity_lab::classic::kObservationSize ||
+        (policy.observation_size() != gravity_lab::classic::kBaseObservationSize &&
+         policy.observation_size() != gravity_lab::classic::kObservationSize) ||
         policy.action_count() != static_cast<std::size_t>(gravity_lab::classic::kActionCount)) {
         throw std::runtime_error("policy is incompatible with gravity-lab-classic-v1 ("
-                                  + std::to_string(gravity_lab::classic::kObservationSize)
+                                  + std::to_string(gravity_lab::classic::kBaseObservationSize)
+                                  + " or " + std::to_string(gravity_lab::classic::kObservationSize)
                                   + " observations, 9 actions)");
     }
 }
@@ -267,7 +272,8 @@ void play(const Options& options, const Selection& selection,
         std::uint64_t elapsed = 0;
         renderer.show_message(environment.track_name(), 700);
         while (!environment.done() && renderer.open()) {
-            const auto action = policy.action(observation);
+            const auto action = policy.action(
+                std::span<const double>(observation.data(), policy.observation_size()));
             result = environment.step(static_cast<gravity_lab::classic::Action>(action));
             observation = result.observation;
             reward += result.reward;

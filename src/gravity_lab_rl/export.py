@@ -8,7 +8,7 @@ from typing import Any
 
 from gravity_lab import DenseLayer, DenseQPolicy
 
-from . import ACTION_COUNT, ENVIRONMENT_ID, OBSERVATION_SIZE
+from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
 from .checkpoint import load_checkpoint
 from .model import DenseQNetwork
 
@@ -24,7 +24,7 @@ def policy_from_model(model: DenseQNetwork) -> DenseQPolicy:
             DenseLayer.from_values(model.q.weight, model.q.bias, "linear"),
         ],
     )
-    if policy.observation_size != OBSERVATION_SIZE or policy.action_count != ACTION_COUNT:
+    if policy.observation_size not in (BASE_OBSERVATION_SIZE, OBSERVATION_SIZE) or policy.action_count != ACTION_COUNT:
         raise ValueError("exported policy dimensions do not match the environment")
     return policy
 
@@ -34,10 +34,21 @@ def load_policy_into_model(model: DenseQNetwork, path: str | Path) -> dict[str, 
     import torch
 
     policy = DenseQPolicy.load(path)
-    if policy.environment_id != ENVIRONMENT_ID or policy.observation_size != OBSERVATION_SIZE or policy.action_count != ACTION_COUNT:
+    if (policy.environment_id != ENVIRONMENT_ID
+            or policy.observation_size not in (BASE_OBSERVATION_SIZE, OBSERVATION_SIZE)
+            or policy.action_count != ACTION_COUNT):
         raise ValueError("initial policy is incompatible with gravity-lab-classic-v1")
     if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != [128, 128, 9]:
-        raise ValueError(f"initial policy architecture must be {OBSERVATION_SIZE}x128x128x9")
+        raise ValueError(
+            f"initial policy architecture must be {BASE_OBSERVATION_SIZE}x128x128x9 or "
+            f"{OBSERVATION_SIZE}x128x128x9"
+        )
+    if policy.observation_size != len(model.input_scale):
+        raise ValueError(
+            "initial policy observation width does not match the target model "
+            f"({policy.observation_size} vs {len(model.input_scale)}); use a config whose "
+            "normalization vectors match the policy being loaded"
+        )
     with torch.no_grad():
         model.input_scale.copy_(torch.tensor(policy.input_scale, dtype=model.input_scale.dtype,
                                              device=model.input_scale.device))
@@ -68,7 +79,7 @@ def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
             "format": "gravity-lab-dense-q-policy-sidecar-v1",
             "policy": destination.name, "policy_sha256": digest,
             "checkpoint": Path(checkpoint_path).name,
-            "environment_id": ENVIRONMENT_ID, "observation_size": OBSERVATION_SIZE,
+            "environment_id": ENVIRONMENT_ID, "observation_size": len(norm["input_scale"]),
             "action_count": ACTION_COUNT, "configuration": checkpoint["config"],
             "normalization": norm, "metadata": checkpoint.get("metadata", {}),
             "transition_count": checkpoint["transition_count"],

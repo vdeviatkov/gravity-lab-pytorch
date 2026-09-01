@@ -4,7 +4,7 @@ from pathlib import Path
 
 from gravity_lab import DenseQPolicy
 
-from gravity_lab_rl import ACTION_COUNT, ENVIRONMENT_ID, OBSERVATION_SIZE
+from gravity_lab_rl import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, OBSERVATION_SIZE
 from gravity_lab_rl.playback import bundled_policy
 import gravity_lab_rl.playback as playback
 
@@ -12,6 +12,17 @@ import gravity_lab_rl.playback as playback
 def test_bundled_policy_contract_and_checksum():
     path = bundled_policy()
     assert path == Path(__file__).resolve().parents[1] / "policies" / "classic_intro.gdp"
+    policy = DenseQPolicy.load(path)
+    metadata = json.loads(path.with_suffix(".gdp.json").read_text(encoding="utf-8"))
+    assert policy.environment_id == ENVIRONMENT_ID
+    # The default bundled policy is the legacy (pre-obstacle-sensor) network.
+    assert policy.observation_size == BASE_OBSERVATION_SIZE
+    assert policy.action_count == ACTION_COUNT
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == metadata["policy_sha256"]
+
+
+def test_bundled_sensor_policy_contract_and_checksum():
+    path = Path(__file__).resolve().parents[1] / "policies" / "classic_intro_sensor.gdp"
     policy = DenseQPolicy.load(path)
     metadata = json.loads(path.with_suffix(".gdp.json").read_text(encoding="utf-8"))
     assert policy.environment_id == ENVIRONMENT_ID

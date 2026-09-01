@@ -20,6 +20,73 @@ difference is what the network is allowed to see: the legacy network sees only t
 state; the sensor network additionally sees eight ray-cast distances to the track surface ahead.
 Everything below is measured, not estimated — see the closing note for exactly how.
 
+Both approaches live side by side in this repository and are both runnable — the native
+environment always returns the full 36-value observation; indices 0–27 are an unchanged,
+compatible prefix, so a 28-input model simply ignores the last 8 values. `gravity_lab_rl.model`
+sizes a network's input layer from its config's `normalization.input_scale` length (28 or 36),
+so the same CLI works for either.
+
+## How to run each approach
+
+| | Legacy (28-in) | Sensor (36-in) |
+|---|---|---|
+| Config | `configs/classic_intro_legacy.json`, `configs/classic_all_tracks_legacy.json` | `configs/classic_intro.json`, `configs/classic_all_tracks.json` |
+| Bundled policy | `policies/classic_intro.gdp` | `policies/classic_intro_sensor.gdp` |
+
+**Train from scratch:**
+
+```sh
+# Legacy (28-input)
+.venv/bin/gravity-lab-rl train --config configs/classic_intro_legacy.json --duration-seconds 60
+
+# Sensor (36-input)
+.venv/bin/gravity-lab-rl train --config configs/classic_intro.json --duration-seconds 60
+```
+
+**Continue training from a bundled policy** (config's normalization width must match the policy
+being loaded):
+
+```sh
+# Legacy
+.venv/bin/gravity-lab-rl train --config configs/classic_all_tracks_legacy.json \
+  --initialize-policy policies/classic_intro.gdp --duration-seconds 1800 --device cpu
+
+# Sensor
+.venv/bin/gravity-lab-rl train --config configs/classic_all_tracks.json \
+  --initialize-policy policies/classic_intro_sensor.gdp --duration-seconds 1800 --device cpu
+```
+
+**Play a bundled policy in the graphical viewer or AI Arcade** (both accept either width
+directly — no config needed, the policy file is self-describing):
+
+```sh
+./scripts/play_latest.sh --policy policies/classic_intro.gdp           # legacy
+./scripts/play_latest.sh --policy policies/classic_intro_sensor.gdp    # sensor
+
+./scripts/ai_arcade.sh --policy policies/classic_intro.gdp             # legacy
+./scripts/ai_arcade.sh --policy policies/classic_intro_sensor.gdp      # sensor
+```
+
+**Formally evaluate a bundled policy** (1 episode × all 30 tracks, ε=0 — this is how every
+number in this document was produced):
+
+```python
+from gravity_lab_rl.config import load_config
+from gravity_lab_rl.model import DenseQNetwork
+from gravity_lab_rl.export import load_policy_into_model
+from gravity_lab_rl.evaluation import evaluate_model
+
+cfg = load_config("configs/classic_all_tracks_legacy.json")  # or classic_all_tracks.json for sensor
+model = DenseQNetwork(cfg["seeds"]["parameter_initialization"],
+                      cfg["normalization"]["input_scale"], cfg["normalization"]["input_bias"])
+load_policy_into_model(model, "policies/classic_intro.gdp")  # or classic_intro_sensor.gdp
+print(evaluate_model(model, cfg))
+```
+
+A run already in `artifacts/<run-id>/` can instead be evaluated directly by CLI —
+`gravity-lab-rl evaluate --run-id <id>` — since its own config on disk already carries the
+correct observation width.
+
 ## 1. Legacy policy — 28 inputs
 
 *No obstacle sensing.*

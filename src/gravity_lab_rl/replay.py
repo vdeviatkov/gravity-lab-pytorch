@@ -20,10 +20,10 @@ class ReplayBatch:
 
 
 class ReplayBuffer:
-    def __init__(self, capacity: int, seed: int) -> None:
+    def __init__(self, capacity: int, seed: int, observation_size: int = OBSERVATION_SIZE) -> None:
         self.capacity = int(capacity)
-        self.observations = np.empty((capacity, OBSERVATION_SIZE), dtype=np.float32)
-        self.next_observations = np.empty((capacity, OBSERVATION_SIZE), dtype=np.float32)
+        self.observations = np.empty((capacity, observation_size), dtype=np.float32)
+        self.next_observations = np.empty((capacity, observation_size), dtype=np.float32)
         self.actions = np.empty(capacity, dtype=np.int64)
         self.rewards = np.empty(capacity, dtype=np.float32)
         self.terminated = np.empty(capacity, dtype=np.bool_)

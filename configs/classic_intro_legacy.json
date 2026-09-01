@@ -1,0 +1,48 @@
+{
+  "format": "gravity-lab-rl-config-v1",
+  "environment_id": "gravity-lab-classic-v1",
+  "environment": {
+    "level_group": 0,
+    "track": 0,
+    "league": 0,
+    "frame_skip": 2,
+    "max_episode_steps": 2000,
+    "level_pack": null
+  },
+  "algorithm": {
+    "hidden_sizes": [128, 128],
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "batch_size": 128,
+    "replay_capacity": 100000,
+    "replay_warmup": 5000,
+    "update_every": 4,
+    "target_update_every": 2000,
+    "gradient_clip_norm": 10.0,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay_transitions": 200000
+  },
+  "normalization": {
+    "kind": "identity",
+    "input_scale": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "input_bias": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "seeds": {
+    "environment": 7,
+    "parameter_initialization": 11,
+    "epsilon_exploration": 13,
+    "replay_sampling": 17,
+    "validation": 1000007,
+    "final_evaluation": 2000007
+  },
+  "experiment": {
+    "duration_seconds": 3600,
+    "checkpoint_interval_seconds": 15,
+    "status_interval_seconds": 1,
+    "evaluation_episodes": 5,
+    "checkpoint_selection_rule": "latest online network; final evaluation is never used for selection",
+    "device": "auto"
+  }
+}
+
