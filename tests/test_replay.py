@@ -1,11 +1,12 @@
 import numpy as np
 
+from gravity_lab_rl import OBSERVATION_SIZE
 from gravity_lab_rl.replay import ReplayBuffer
 
 
 def add_rows(buffer, count=8):
     for i in range(count):
-        observation = np.full(72, i, dtype=np.float32)
+        observation = np.full(OBSERVATION_SIZE, i, dtype=np.float32)
         buffer.add(observation, i % 9, float(i), observation + 1, i % 3 == 0, i % 4 == 0)
 
 
@@ -15,7 +16,7 @@ def test_replay_insertion_wrap_and_sampling():
     assert len(replay) == 5
     assert replay.position == 2
     batch = replay.sample(3, "cpu")
-    assert batch.observations.shape == (3, 72)
+    assert batch.observations.shape == (3, OBSERVATION_SIZE)
     assert batch.actions.shape == (3,)
 
 

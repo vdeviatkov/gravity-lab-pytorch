@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from . import (
+    ACCELERATION_REGION_END,
     ACTION_COUNT,
     BASE_OBSERVATION_SIZE,
     DEFAULT_OBSTACLE_RAY_COUNT,
@@ -17,8 +18,9 @@ from . import (
 
 
 def valid_observation_size(size: int) -> bool:
-    """True if `size` is a real region boundary: base-only, base+some ray count, or full width."""
-    if size == BASE_OBSERVATION_SIZE or size == OBSERVATION_SIZE:
+    """True if `size` is a real region boundary: base-only, base+some ray count, sensor+accel
+    without track id, or the full width including the track-id one-hot."""
+    if size in (BASE_OBSERVATION_SIZE, ACCELERATION_REGION_END, OBSERVATION_SIZE):
         return True
     return BASE_OBSERVATION_SIZE < size <= OBSTACLE_REGION_END
 
@@ -50,18 +52,22 @@ def validate_config(config: dict[str, Any]) -> None:
     if not 1 <= ray_count <= MAX_OBSTACLE_RAY_COUNT:
         raise ValueError(f"obstacle_ray_count must be in [1, {MAX_OBSTACLE_RAY_COUNT}]")
     algo = config["algorithm"]
-    if list(algo["hidden_sizes"]) != [128, 128]:
-        raise ValueError("v1 portable architecture requires hidden_sizes [128, 128]")
+    hidden_sizes = list(algo["hidden_sizes"])
+    if len(hidden_sizes) != 2 or any(int(size) <= 0 for size in hidden_sizes):
+        raise ValueError("hidden_sizes must be a list of exactly two positive integers")
     if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
         raise ValueError("invalid replay or batch size")
+    if int(algo.get("n_step", 1)) <= 0:
+        raise ValueError("n_step must be positive")
     norm = config["normalization"]
     if len(norm["input_scale"]) != len(norm["input_bias"]) or not valid_observation_size(
         len(norm["input_scale"])
     ):
         raise ValueError(
             f"normalization must contain {BASE_OBSERVATION_SIZE} matching scale and bias values "
-            f"(optionally +1..{MAX_OBSTACLE_RAY_COUNT} for obstacle rays), or {OBSERVATION_SIZE} "
-            "for the full sensor+acceleration vector"
+            f"(optionally +1..{MAX_OBSTACLE_RAY_COUNT} for obstacle rays), {ACCELERATION_REGION_END} "
+            f"for sensor+acceleration, or {OBSERVATION_SIZE} for the full vector including the "
+            "track-id one-hot"
         )
     for name, seed in config["seeds"].items():
         if not isinstance(seed, int) or not 0 <= seed < 2**63:

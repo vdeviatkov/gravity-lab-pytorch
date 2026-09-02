@@ -17,6 +17,7 @@ class ReplayBatch:
     next_observations: torch.Tensor
     terminated: torch.Tensor
     truncated: torch.Tensor
+    steps: torch.Tensor
 
 
 class ReplayBuffer:
@@ -28,6 +29,12 @@ class ReplayBuffer:
         self.rewards = np.empty(capacity, dtype=np.float32)
         self.terminated = np.empty(capacity, dtype=np.bool_)
         self.truncated = np.empty(capacity, dtype=np.bool_)
+        # Number of environment steps this transition's reward and next_observation actually span
+        # (see NStepAccumulator): 1 for a plain transition, up to the configured n for a full
+        # n-step return, and fewer than n only for the last few steps before an episode ends.
+        # Needed because the Bellman target's bootstrap discount is gamma ** steps, not a fixed
+        # gamma ** n, at those episode-ending edges.
+        self.steps = np.empty(capacity, dtype=np.int64)
         self.position = 0
         self.size = 0
         self.rng = np.random.default_rng(seed)
@@ -36,7 +43,7 @@ class ReplayBuffer:
         return self.size
 
     def add(self, observation: object, action: int, reward: float, next_observation: object,
-            terminated: bool, truncated: bool) -> None:
+            terminated: bool, truncated: bool, steps: int = 1) -> None:
         i = self.position
         self.observations[i] = observation
         self.actions[i] = action
@@ -44,6 +51,7 @@ class ReplayBuffer:
         self.next_observations[i] = next_observation
         self.terminated[i] = terminated
         self.truncated[i] = truncated
+        self.steps[i] = steps
         self.position = (i + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
 
@@ -59,6 +67,7 @@ class ReplayBuffer:
             tensor(self.observations[indices]), tensor(self.actions[indices]),
             tensor(self.rewards[indices]), tensor(self.next_observations[indices]),
             tensor(self.terminated[indices], torch.bool), tensor(self.truncated[indices], torch.bool),
+            tensor(self.steps[indices], torch.int64),
         )
 
     def state_dict(self) -> dict[str, Any]:
@@ -68,6 +77,7 @@ class ReplayBuffer:
             "observations": self.observations[:n].copy(), "actions": self.actions[:n].copy(),
             "rewards": self.rewards[:n].copy(), "next_observations": self.next_observations[:n].copy(),
             "terminated": self.terminated[:n].copy(), "truncated": self.truncated[:n].copy(),
+            "steps": self.steps[:n].copy(),
             "rng_state": self.rng.bit_generator.state,
         }
 
@@ -77,6 +87,9 @@ class ReplayBuffer:
         n = int(state["size"])
         for name in ("observations", "actions", "rewards", "next_observations", "terminated", "truncated"):
             getattr(self, name)[:n] = state[name]
+        # Older checkpoints (pre n-step returns) have no "steps" field; those transitions were all
+        # single-step, so default to 1.
+        self.steps[:n] = state["steps"] if "steps" in state else 1
         self.size, self.position = n, int(state["position"])
         self.rng.bit_generator.state = state["rng_state"]
 

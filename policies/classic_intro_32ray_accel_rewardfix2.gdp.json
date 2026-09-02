@@ -1,0 +1,36 @@
+{
+  "format": "gravity-lab-bundled-policy-v1",
+  "policy": "classic_intro_32ray_accel_rewardfix2.gdp",
+  "policy_sha256": "6aa160ff93d9917382366be9800b888478ebcdcd339192ac630ae45d095023bd",
+  "environment_id": "gravity-lab-classic-v1",
+  "observation_size": 72,
+  "action_count": 9,
+  "architecture": [72, 128, 128, 9],
+  "activations": ["relu", "relu", "linear"],
+  "normalization": "identity",
+  "obstacle_ray_count": 32,
+  "training_environment": {
+    "level_group": 0,
+    "track": 0,
+    "league": 0,
+    "frame_skip": 2,
+    "max_episode_steps": 2000,
+    "obstacle_ray_count": 32
+  },
+  "training": {
+    "active_duration_seconds": 508.3,
+    "transitions": 2275643,
+    "optimizer_updates": 566411,
+    "note": "IN-PROGRESS all-tracks curriculum run (configs/classic_all_tracks_32ray_accel.json, run sensor32_accel_rewardfix3_20260901) with the CORRECTED reward rebalance (kPerStepPenalty=0.1, derived from discounted-value math: kPerStepPenalty > kCrashPenalty*(1-gamma) = 0.05) and the best-checkpoint-eval-timer bug fixed (Trainer._restore was resetting the eval countdown on every watchdog restart). This is the second reward attempt -- the first (kPerStepPenalty=0.003, undiscounted math) was confirmed ineffective by hands-on testing; see docs/training-runs.md 'Reward tuning experiments'. Warm-started from policies/classic_intro_32ray_accel.gdp (7/30, old reward). Snapshot mid-run; will likely be superseded once the run completes."
+  },
+  "reference_evaluation": {
+    "episodes": 30,
+    "mean_reward": null,
+    "mean_progress": 0.3685559734424497,
+    "finish_rate": 0.16666666666666666,
+    "crash_rate": null,
+    "truncation_rate": null,
+    "note": "One episode per curriculum environment (all 30 Easy/Medium/Pro tracks), deterministic, seed 2000007. Solves 5/30 tracks. Captured mid-run under the corrected reward; see docs/training-runs.md for the run's final result. Deployed for hands-on comparison against classic_intro_32ray_accel.gdp (old reward) and classic_intro_32ray_accel_rewardfix.gdp (first, ineffective reward attempt)."
+  },
+  "gravity_lab_commit": "7210e52967b4835ad725ee69291507ac24c8874f"
+}

@@ -8,7 +8,7 @@ from typing import Any
 
 from gravity_lab import DenseLayer, DenseQPolicy
 
-from . import ACTION_COUNT, BASE_OBSERVATION_SIZE, ENVIRONMENT_ID, MAX_OBSTACLE_RAY_COUNT, OBSERVATION_SIZE
+from . import ACTION_COUNT, ENVIRONMENT_ID
 from .checkpoint import load_checkpoint
 from .config import valid_observation_size
 from .model import DenseQNetwork
@@ -39,11 +39,12 @@ def load_policy_into_model(model: DenseQNetwork, path: str | Path) -> dict[str, 
             or not valid_observation_size(policy.observation_size)
             or policy.action_count != ACTION_COUNT):
         raise ValueError("initial policy is incompatible with gravity-lab-classic-v1")
-    if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != [128, 128, 9]:
+    expected_hidden = [len(model.fc1.bias), len(model.fc2.bias), ACTION_COUNT]
+    if len(policy.layers) != 3 or [len(layer.bias) for layer in policy.layers] != expected_hidden:
+        found = "x".join(str(len(layer.bias)) for layer in policy.layers)
         raise ValueError(
-            f"initial policy architecture must be {BASE_OBSERVATION_SIZE}x128x128x9, "
-            f"({BASE_OBSERVATION_SIZE}+1..{MAX_OBSTACLE_RAY_COUNT})x128x128x9, or "
-            f"{OBSERVATION_SIZE}x128x128x9"
+            f"initial policy hidden architecture {found} does not match the target model's "
+            f"{'x'.join(str(n) for n in expected_hidden)}; use a config with matching hidden_sizes"
         )
     if policy.observation_size != len(model.input_scale):
         raise ValueError(
@@ -70,7 +71,8 @@ def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
     checkpoint = load_checkpoint(checkpoint_path)
     norm = checkpoint["normalization"]
     seed = checkpoint["config"]["seeds"]["parameter_initialization"]
-    model = DenseQNetwork(seed, norm["input_scale"], norm["input_bias"])
+    hidden_sizes = tuple(checkpoint["config"]["algorithm"]["hidden_sizes"])
+    model = DenseQNetwork(seed, norm["input_scale"], norm["input_bias"], hidden_sizes)
     model.load_state_dict(checkpoint["online_network"])
     model.eval()
     destination = Path(output_path)

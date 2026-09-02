@@ -121,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
         saved = load_checkpoint(run / "latest.pt")
         cfg, norm = saved["config"], saved["normalization"]
         device = select_device(cfg["experiment"]["device"])
-        model = DenseQNetwork(cfg["seeds"]["parameter_initialization"], norm["input_scale"], norm["input_bias"]).to(device)
+        model = DenseQNetwork(cfg["seeds"]["parameter_initialization"], norm["input_scale"], norm["input_bias"],
+                             tuple(cfg["algorithm"]["hidden_sizes"])).to(device)
         model.load_state_dict(saved["online_network"])
         print(json.dumps(evaluate_model(model, cfg, args.episodes, args.seed, device), indent=2, sort_keys=True))
         return 0

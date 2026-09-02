@@ -54,6 +54,49 @@ def make_run_id() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{os.getpid()}"
 
 
+class NStepAccumulator:
+    """Turns a stream of 1-step transitions into n-step returns for the replay buffer.
+
+    Sparse terminal rewards (the +10 finish bonus, -5 crash penalty) can take many 1-step Bellman
+    backups to propagate to the states that matter for deciding whether to attempt a risky
+    obstacle; n-step returns carry the actual reward further back in one replay sample instead of
+    relying purely on bootstrapped chains. Not persisted across checkpoints: it only ever holds
+    up to `n - 1` steps of one in-flight episode, and every resume begins a fresh episode anyway.
+    """
+
+    def __init__(self, n: int, gamma: float) -> None:
+        self.n = int(n)
+        self.gamma = float(gamma)
+        self._window: list[tuple[object, int, float, object, bool, bool]] = []
+
+    def push(self, observation: object, action: int, reward: float, next_observation: object,
+             terminated: bool, truncated: bool) -> list[tuple[object, int, float, object, bool, bool, int]]:
+        self._window.append((observation, action, reward, next_observation, terminated, truncated))
+        ready = []
+        if len(self._window) >= self.n:
+            ready.append(self._collapse())
+        if terminated or truncated:
+            ready.extend(self.flush())
+        return ready
+
+    def _collapse(self) -> tuple[object, int, float, object, bool, bool, int]:
+        observation, action = self._window[0][0], self._window[0][1]
+        discounted = sum(self.gamma ** k * self._window[k][2] for k in range(len(self._window)))
+        _, _, _, next_observation, terminated, truncated = self._window[-1]
+        steps = len(self._window)
+        self._window.pop(0)
+        return observation, action, discounted, next_observation, terminated, truncated, steps
+
+    def flush(self) -> list[tuple[object, int, float, object, bool, bool, int]]:
+        ready = []
+        while self._window:
+            ready.append(self._collapse())
+        return ready
+
+    def reset(self) -> None:
+        self._window.clear()
+
+
 def make_metadata(config: dict[str, Any], device: torch.device) -> dict[str, Any]:
     gravity_path = game_repo()
     return {
@@ -90,10 +133,11 @@ class Trainer:
         torch.set_num_threads(int(config["experiment"].get("torch_num_threads", 1)))
         self.device = select_device(config["experiment"]["device"])
         norm, seeds, algo = config["normalization"], config["seeds"], config["algorithm"]
+        hidden_sizes = tuple(algo["hidden_sizes"])
         self.online = DenseQNetwork(seeds["parameter_initialization"], norm["input_scale"],
-                                    norm["input_bias"]).to(self.device)
+                                    norm["input_bias"], hidden_sizes).to(self.device)
         self.target = DenseQNetwork(seeds["parameter_initialization"], norm["input_scale"],
-                                    norm["input_bias"]).to(self.device)
+                                    norm["input_bias"], hidden_sizes).to(self.device)
         if initial_policy is not None:
             loaded_normalization = load_policy_into_model(self.online, initial_policy)
             self.config["normalization"] = loaded_normalization
@@ -252,7 +296,7 @@ class Trainer:
         batch = self.replay.sample(algo["batch_size"], self.device)
         predicted = self.online(batch.observations).gather(1, batch.actions[:, None]).squeeze(1)
         targets = double_dqn_targets(batch.rewards, batch.next_observations, batch.terminated,
-                                     self.online, self.target, algo["gamma"])
+                                     self.online, self.target, algo["gamma"], batch.steps)
         loss = F.smooth_l1_loss(predicted, targets)
         self.optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -304,6 +348,7 @@ class Trainer:
                 observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                     :self.observation_size]
                 episode_reward, episode_length, last_loss = 0.0, 0, None
+                n_step = NStepAccumulator(int(algo.get("n_step", 1)), algo["gamma"])
                 while self.current_active_elapsed() < duration and not self._stop_signal:
                     if self._pause_if_requested():
                         break
@@ -317,8 +362,9 @@ class Trainer:
                             action = int(torch.argmax(values).item())
                     step = env.step(action)
                     next_observation = step.observation[:self.observation_size]
-                    self.replay.add(observation, action, step.reward, next_observation,
-                                    step.terminated, step.truncated)
+                    for ready in n_step.push(observation, action, step.reward, next_observation,
+                                             step.terminated, step.truncated):
+                        self.replay.add(*ready)
                     observation = next_observation
                     self.transition_count += 1
                     episode_reward += step.reward
@@ -385,6 +431,10 @@ class Trainer:
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                             :self.observation_size]
                         episode_reward, episode_length = 0.0, 0
+                        # This abandons the in-progress episode without a terminal/truncated
+                        # signal, so any partial n-step window from it must be discarded, not
+                        # carried into the next episode.
+                        n_step.reset()
                 graceful_reason = self._stop_signal or "duration-expired"
         except KeyboardInterrupt:
             graceful_reason = "KeyboardInterrupt"

@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from gravity_lab_rl import OBSERVATION_SIZE
+
 
 def test_classic_environment_smoke():
     default_game = Path(__file__).resolve().parents[1] / "gravity-lab"
@@ -20,5 +22,5 @@ def test_classic_environment_smoke():
                                          max_episode_steps=10, seed=7)) as env:
         observation = env.reset(7)
         result = env.step(1)
-        assert len(observation) == 72 and len(result.observation) == 72
+        assert len(observation) == OBSERVATION_SIZE and len(result.observation) == OBSERVATION_SIZE
         assert isinstance(result.reward, float)

@@ -73,9 +73,17 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
 
 def double_dqn_targets(rewards: torch.Tensor, next_observations: torch.Tensor,
                        terminated: torch.Tensor, online_network: DenseQNetwork,
-                       target_network: DenseQNetwork, gamma: float) -> torch.Tensor:
-    """Double-DQN target; truncation deliberately does not disable bootstrapping."""
+                       target_network: DenseQNetwork, gamma: float,
+                       steps: torch.Tensor | None = None) -> torch.Tensor:
+    """Double-DQN n-step target; truncation deliberately does not disable bootstrapping.
+
+    `rewards` is already the discounted n-step return and `steps` is how many environment steps
+    it actually spans (1 for plain 1-step transitions; see NStepAccumulator / ReplayBuffer), so
+    the bootstrap term is discounted by gamma ** steps, not a fixed gamma.
+    """
     with torch.no_grad():
         next_actions = online_network(next_observations).argmax(dim=1, keepdim=True)
         next_values = target_network(next_observations).gather(1, next_actions).squeeze(1)
-        return rewards + float(gamma) * (~terminated).to(rewards.dtype) * next_values
+        discount = (float(gamma) ** steps.to(rewards.dtype) if steps is not None
+                   else float(gamma))
+        return rewards + discount * (~terminated).to(rewards.dtype) * next_values

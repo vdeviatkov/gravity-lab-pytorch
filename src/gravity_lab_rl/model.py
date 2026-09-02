@@ -8,7 +8,8 @@ from . import ACTION_COUNT, OBSERVATION_SIZE
 
 class DenseQNetwork(nn.Module):
     def __init__(self, initialization_seed: int, input_scale: list[float] | None = None,
-                 input_bias: list[float] | None = None) -> None:
+                 input_bias: list[float] | None = None,
+                 hidden_sizes: tuple[int, int] = (128, 128)) -> None:
         super().__init__()
         # The observation width is derived from the normalization vectors rather than fixed to
         # OBSERVATION_SIZE, so a model can target either the legacy 28-value observation or the
@@ -16,13 +17,14 @@ class DenseQNetwork(nn.Module):
         # observation is a superset, and the leading `input_size` values are always a compatible
         # prefix (see docs/policy-comparison.md).
         input_size = len(input_scale) if input_scale is not None else OBSERVATION_SIZE
+        hidden1, hidden2 = hidden_sizes
         # Linear constructors initialize parameters, so isolate even that temporary work from
         # PyTorch's process-global RNG before applying our named local-generator initialization.
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(initialization_seed)
-            self.fc1 = nn.Linear(input_size, 128)
-            self.fc2 = nn.Linear(128, 128)
-            self.q = nn.Linear(128, ACTION_COUNT)
+            self.fc1 = nn.Linear(input_size, hidden1)
+            self.fc2 = nn.Linear(hidden1, hidden2)
+            self.q = nn.Linear(hidden2, ACTION_COUNT)
         self.register_buffer("input_scale", torch.tensor(input_scale or [1.0] * OBSERVATION_SIZE,
                                                          dtype=torch.float32))
         self.register_buffer("input_bias", torch.tensor(input_bias or [0.0] * OBSERVATION_SIZE,
