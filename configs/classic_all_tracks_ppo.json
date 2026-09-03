@@ -1,0 +1,72 @@
+{
+  "format": "gravity-lab-rl-config-v1",
+  "environment_id": "gravity-lab-classic-v1",
+  "environment": {
+    "level_group": 0,
+    "track": 0,
+    "league": 0,
+    "frame_skip": 2,
+    "max_episode_steps": 2000,
+    "level_pack": null,
+    "obstacle_ray_count": 32
+  },
+  "curriculum": {
+    "enabled": true,
+    "episodes_per_track": 5,
+    "stages": [
+      {
+        "level_group": 0,
+        "league": 0,
+        "tracks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      },
+      {
+        "level_group": 1,
+        "league": 1,
+        "tracks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      },
+      {
+        "level_group": 2,
+        "league": 2,
+        "tracks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      }
+    ],
+    "stage_advance_finish_rate": 0.5
+  },
+  "algorithm": {
+    "kind": "ppo",
+    "hidden_sizes": [256, 256],
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_epsilon": 0.2,
+    "value_coef": 0.5,
+    "entropy_coef": 0.03,
+    "rollout_length": 2048,
+    "ppo_epochs": 4,
+    "minibatch_size": 256,
+    "gradient_clip_norm": 0.5
+  },
+  "normalization": {
+    "kind": "identity",
+    "input_scale": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "input_bias": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "seeds": {
+    "environment": 7,
+    "parameter_initialization": 11,
+    "epsilon_exploration": 13,
+    "replay_sampling": 17,
+    "validation": 1000007,
+    "final_evaluation": 2000007
+  },
+  "experiment": {
+    "duration_seconds": 3600,
+    "checkpoint_interval_seconds": 30,
+    "status_interval_seconds": 1,
+    "evaluation_episodes": 1,
+    "best_checkpoint_eval_interval_seconds": 90,
+    "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
+    "device": "cpu",
+    "torch_num_threads": 1
+  }
+}

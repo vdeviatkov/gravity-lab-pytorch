@@ -13,9 +13,14 @@ from .config import configured, load_config
 from .control import read_control, request_control, resolve_run
 from .evaluation import evaluate_model
 from .export import export_checkpoint
-from .model import DenseQNetwork, select_device
+from .model import ActorCriticNetwork, DenseQNetwork, select_device
 from .playback import arcade, play
+from .ppo_trainer import PPOTrainer
 from .trainer import Trainer, make_run_id
+
+
+def _trainer_class(config: dict[str, Any]) -> type[Trainer] | type[PPOTrainer]:
+    return PPOTrainer if config["algorithm"].get("kind", "dqn") == "ppo" else Trainer
 
 
 def _run_arg(parser: argparse.ArgumentParser) -> None:
@@ -92,8 +97,9 @@ def main(argv: list[str] | None = None) -> int:
         cfg = configured(load_config(args.config), duration_seconds=args.duration_seconds, device=args.device)
         run_id = args.run_id or make_run_id()
         initial_policy = Path(args.initialize_policy) if args.initialize_policy else None
-        summary = Trainer(cfg, Path(__file__).resolve().parents[2] / "artifacts" / run_id,
-                          initial_policy=initial_policy).run()
+        trainer_class = _trainer_class(cfg)
+        summary = trainer_class(cfg, Path(__file__).resolve().parents[2] / "artifacts" / run_id,
+                                initial_policy=initial_policy).run()
         _print_summary(summary)
         return 0
     if args.command == "resume":
@@ -101,7 +107,8 @@ def main(argv: list[str] | None = None) -> int:
         checkpoint = run / "latest.pt"
         saved = load_checkpoint(checkpoint)
         cfg = configured(saved["config"], duration_seconds=args.duration_seconds, device=args.device)
-        summary = Trainer(cfg, run, checkpoint).run()
+        trainer_class = _trainer_class(cfg)
+        summary = trainer_class(cfg, run, checkpoint).run()
         _print_summary(summary)
         return 0
     if args.command in ("status", "control"):
@@ -121,8 +128,9 @@ def main(argv: list[str] | None = None) -> int:
         saved = load_checkpoint(run / "latest.pt")
         cfg, norm = saved["config"], saved["normalization"]
         device = select_device(cfg["experiment"]["device"])
-        model = DenseQNetwork(cfg["seeds"]["parameter_initialization"], norm["input_scale"], norm["input_bias"],
-                             tuple(cfg["algorithm"]["hidden_sizes"])).to(device)
+        network_class = ActorCriticNetwork if cfg["algorithm"].get("kind", "dqn") == "ppo" else DenseQNetwork
+        model = network_class(cfg["seeds"]["parameter_initialization"], norm["input_scale"], norm["input_bias"],
+                              tuple(cfg["algorithm"]["hidden_sizes"])).to(device)
         model.load_state_dict(saved["online_network"])
         print(json.dumps(evaluate_model(model, cfg, args.episodes, args.seed, device), indent=2, sort_keys=True))
         return 0

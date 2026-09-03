@@ -11,7 +11,7 @@ from gravity_lab import DenseLayer, DenseQPolicy
 from . import ACTION_COUNT, ENVIRONMENT_ID
 from .checkpoint import load_checkpoint
 from .config import valid_observation_size
-from .model import DenseQNetwork
+from .model import ActorCriticNetwork, DenseQNetwork
 
 
 def policy_from_model(model: DenseQNetwork) -> DenseQPolicy:
@@ -72,7 +72,12 @@ def export_checkpoint(checkpoint_path: str | Path, output_path: str | Path,
     norm = checkpoint["normalization"]
     seed = checkpoint["config"]["seeds"]["parameter_initialization"]
     hidden_sizes = tuple(checkpoint["config"]["algorithm"]["hidden_sizes"])
-    model = DenseQNetwork(seed, norm["input_scale"], norm["input_bias"], hidden_sizes)
+    # PPO checkpoints carry an extra value head (ActorCriticNetwork); policy_from_model only ever
+    # reads fc1/fc2/q regardless of subclass, so the exported .gdp is identical in shape either way
+    # -- the value head is training-only and never exported.
+    kind = checkpoint["config"]["algorithm"].get("kind", "dqn")
+    network_class = ActorCriticNetwork if kind == "ppo" else DenseQNetwork
+    model = network_class(seed, norm["input_scale"], norm["input_bias"], hidden_sizes)
     model.load_state_dict(checkpoint["online_network"])
     model.eval()
     destination = Path(output_path)

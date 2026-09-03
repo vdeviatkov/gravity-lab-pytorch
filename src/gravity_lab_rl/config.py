@@ -55,10 +55,27 @@ def validate_config(config: dict[str, Any]) -> None:
     hidden_sizes = list(algo["hidden_sizes"])
     if len(hidden_sizes) != 2 or any(int(size) <= 0 for size in hidden_sizes):
         raise ValueError("hidden_sizes must be a list of exactly two positive integers")
-    if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
-        raise ValueError("invalid replay or batch size")
-    if int(algo.get("n_step", 1)) <= 0:
-        raise ValueError("n_step must be positive")
+    kind = algo.get("kind", "dqn")
+    if kind == "dqn":
+        if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
+            raise ValueError("invalid replay or batch size")
+        if int(algo.get("n_step", 1)) <= 0:
+            raise ValueError("n_step must be positive")
+    elif kind == "ppo":
+        if int(algo["rollout_length"]) <= 0:
+            raise ValueError("rollout_length must be positive")
+        if int(algo["ppo_epochs"]) <= 0:
+            raise ValueError("ppo_epochs must be positive")
+        if not 0 < int(algo["minibatch_size"]) <= int(algo["rollout_length"]):
+            raise ValueError("minibatch_size must be positive and at most rollout_length")
+        if not 0.0 < float(algo["clip_epsilon"]) < 1.0:
+            raise ValueError("clip_epsilon must be in (0, 1)")
+        if not 0.0 <= float(algo["gae_lambda"]) <= 1.0:
+            raise ValueError("gae_lambda must be in [0, 1]")
+        if float(algo["value_coef"]) < 0.0 or float(algo["entropy_coef"]) < 0.0:
+            raise ValueError("value_coef and entropy_coef must be nonnegative")
+    else:
+        raise ValueError(f"unknown algorithm kind: {kind!r}")
     norm = config["normalization"]
     if len(norm["input_scale"]) != len(norm["input_bias"]) or not valid_observation_size(
         len(norm["input_scale"])
@@ -86,6 +103,9 @@ def validate_config(config: dict[str, Any]) -> None:
                 raise ValueError("invalid curriculum stage")
             if any(int(track) < 0 for track in tracks):
                 raise ValueError("curriculum tracks must be nonnegative")
+        threshold = curriculum.get("stage_advance_finish_rate", 0.5)
+        if not 0.0 <= float(threshold) <= 1.0:
+            raise ValueError("curriculum stage_advance_finish_rate must be in [0, 1]")
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")
@@ -96,14 +116,24 @@ def model_input_size(config: dict[str, Any]) -> int:
     return len(config["normalization"]["input_scale"])
 
 
-def curriculum_environments(config: dict[str, Any]) -> list[dict[str, Any]]:
-    """Expand the configured level/league curriculum into concrete environments."""
+def curriculum_environments(config: dict[str, Any],
+                            unlocked_stages: int | None = None) -> list[dict[str, Any]]:
+    """Expand the configured level/league curriculum into concrete environments.
+
+    `unlocked_stages`, when given, restricts the result to the first `unlocked_stages` curriculum
+    stages -- progressive difficulty gating during training (see Trainer.unlocked_stages). Formal
+    evaluation always omits it, so it always covers the full protocol regardless of training-time
+    gating state.
+    """
     base = config["environment"]
     curriculum = config.get("curriculum")
     if not curriculum or not curriculum.get("enabled", False):
         return [copy.deepcopy(base)]
+    stages = curriculum["stages"]
+    if unlocked_stages is not None:
+        stages = stages[:max(1, int(unlocked_stages))]
     result: list[dict[str, Any]] = []
-    for stage in curriculum["stages"]:
+    for stage in stages:
         for track in stage["tracks"]:
             environment = copy.deepcopy(base)
             environment.update({"level_group": int(stage["level_group"]),
@@ -112,9 +142,10 @@ def curriculum_environments(config: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
-def curriculum_environment_index(config: dict[str, Any], completed_episodes: int) -> int:
+def curriculum_environment_index(config: dict[str, Any], completed_episodes: int,
+                                 unlocked_stages: int | None = None) -> int:
     """Return the environment to use next, with complete cycles repeating indefinitely."""
-    environments = curriculum_environments(config)
+    environments = curriculum_environments(config, unlocked_stages)
     curriculum = config.get("curriculum")
     episodes_per_track = (int(curriculum["episodes_per_track"])
                           if curriculum and curriculum.get("enabled", False) else 1)

@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from . import DEFAULT_OBSTACLE_RAY_COUNT
+from . import DEFAULT_OBSTACLE_RAY_COUNT, TRACKS_PER_LEVEL_GROUP
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
 from .config import curriculum_environment_index, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
@@ -157,6 +157,14 @@ class Trainer:
         self.best_score: tuple[float, float] | None = None
         self.best_metrics: dict[str, Any] | None = None
         self._last_best_eval_active = 0.0
+        # Progressive difficulty gating: only the first `unlocked_stages` curriculum stages are
+        # in the training rotation (see config.curriculum_environments). Starts at 1 (stage 0
+        # only) and advances when that stage's finish rate clears
+        # curriculum.stage_advance_finish_rate, checked at each best-checkpoint eval. A round-robin
+        # curriculum that exposes all 30 tracks including the hardest from episode 1 dilutes
+        # training signal across tasks the policy isn't remotely ready for yet; this makes the
+        # rotation grow only once the current stage is actually being solved.
+        self.unlocked_stages = 1
         self.latest_metrics: dict[str, Any] = {}
         self.resume_checkpoint = resume_checkpoint
         self.metadata = make_metadata(config, self.device)
@@ -202,6 +210,7 @@ class Trainer:
         # (e.g. recovering from the native engine's physics stall) would otherwise reset this
         # countdown on every resume and could postpone the eval indefinitely.
         self._last_best_eval_active = float(saved.get("last_best_eval_active", self.active_elapsed))
+        self.unlocked_stages = int(saved.get("unlocked_stages", 1))
         best_score = saved.get("best_score")
         self.best_score = tuple(best_score) if best_score is not None else None
         self.best_metrics = saved.get("best_metrics")
@@ -216,8 +225,9 @@ class Trainer:
         return self.active_elapsed + (0.0 if self._paused else time.monotonic() - self._active_since)
 
     def _checkpoint_payload(self) -> dict[str, Any]:
-        environments = curriculum_environments(self.config)
-        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count)
+        environments = curriculum_environments(self.config, self.unlocked_stages)
+        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count,
+                                                        self.unlocked_stages)
         return {
             "online_network": self.online.state_dict(), "target_network": self.target.state_dict(),
             "optimizer": self.optimizer.state_dict(), "replay_buffer": self.replay.state_dict(),
@@ -233,6 +243,7 @@ class Trainer:
             "best_score": list(self.best_score) if self.best_score is not None else None,
             "best_metrics": self.best_metrics,
             "last_best_eval_active": self._last_best_eval_active,
+            "unlocked_stages": self.unlocked_stages,
             "curriculum_state": {"environment_index": curriculum_index,
                                  "environment": environments[curriculum_index]},
             "saved_at": _now(),
@@ -310,7 +321,6 @@ class Trainer:
     def run(self) -> dict[str, Any]:
         from gravity_lab import ClassicConfig, ClassicGravityEnv
 
-        environments = curriculum_environments(self.config)
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
@@ -327,9 +337,10 @@ class Trainer:
         env: ClassicGravityEnv | None = None
         try:
             with metrics_path.open("a", encoding="utf-8", buffering=1) as metrics_stream:
-                active_index = curriculum_environment_index(self.config,
-                                                            self.completed_episode_count)
-                env_cfg = environments[active_index]
+                active_index = curriculum_environment_index(self.config, self.completed_episode_count,
+                                                            self.unlocked_stages)
+                env_cfg = curriculum_environments(self.config, self.unlocked_stages)[active_index]
+                track_id = env_cfg["level_group"] * TRACKS_PER_LEVEL_GROUP + env_cfg["track"]
 
                 def open_environment(configuration: dict[str, Any]) -> ClassicGravityEnv:
                     classic = ClassicConfig(
@@ -364,7 +375,7 @@ class Trainer:
                     next_observation = step.observation[:self.observation_size]
                     for ready in n_step.push(observation, action, step.reward, next_observation,
                                              step.terminated, step.truncated):
-                        self.replay.add(*ready)
+                        self.replay.add(*ready, track_id=track_id)
                     observation = next_observation
                     self.transition_count += 1
                     episode_reward += step.reward
@@ -388,13 +399,14 @@ class Trainer:
                         }
                         metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
                         metrics_stream.flush()
-                        next_index = curriculum_environment_index(self.config,
-                                                                  self.completed_episode_count)
+                        next_index = curriculum_environment_index(self.config, self.completed_episode_count,
+                                                                  self.unlocked_stages)
                         if next_index != active_index:
                             env.close()
                             env = None
                             active_index = next_index
-                            env_cfg = environments[active_index]
+                            env_cfg = curriculum_environments(self.config, self.unlocked_stages)[active_index]
+                            track_id = env_cfg["level_group"] * TRACKS_PER_LEVEL_GROUP + env_cfg["track"]
                             env = open_environment(env_cfg)
                             track_name = env.track_name
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
@@ -427,6 +439,24 @@ class Trainer:
                             self.best_metrics = eval_result
                             save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
                             export_checkpoint(self.run_dir / "best.pt", self.run_dir / "best.gdp")
+                        # Progressive difficulty gating: only unlock the next curriculum stage once
+                        # the hardest currently-unlocked stage clears its finish-rate bar, using
+                        # this same full-protocol eval (no extra evaluation cost). A round-robin
+                        # curriculum that exposes every stage from episode 1 dilutes training
+                        # signal across tasks the policy isn't remotely ready for -- see
+                        # docs/training-runs.md ("v2 all-tracks outcome").
+                        curriculum = self.config.get("curriculum")
+                        if curriculum and curriculum.get("enabled", False):
+                            stages = curriculum["stages"]
+                            if self.unlocked_stages < len(stages):
+                                current_group = stages[self.unlocked_stages - 1]["level_group"]
+                                stage_rows = [row for row in eval_result["episodes"]
+                                             if row["level_group"] == current_group]
+                                stage_finish = (sum(1.0 for row in stage_rows if row["finished"])
+                                               / len(stage_rows)) if stage_rows else 0.0
+                                threshold = float(curriculum.get("stage_advance_finish_rate", 0.5))
+                                if stage_finish >= threshold:
+                                    self.unlocked_stages += 1
                         env = open_environment(env_cfg)
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                             :self.observation_size]
