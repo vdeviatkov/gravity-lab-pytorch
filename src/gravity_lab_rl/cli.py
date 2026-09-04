@@ -16,11 +16,17 @@ from .export import export_checkpoint
 from .model import ActorCriticNetwork, DenseQNetwork, select_device
 from .playback import arcade, play
 from .ppo_trainer import PPOTrainer
+from .sac_trainer import SACREDQTrainer
 from .trainer import Trainer, make_run_id
 
 
-def _trainer_class(config: dict[str, Any]) -> type[Trainer] | type[PPOTrainer]:
-    return PPOTrainer if config["algorithm"].get("kind", "dqn") == "ppo" else Trainer
+def _trainer_class(config: dict[str, Any]) -> type[Trainer] | type[PPOTrainer] | type[SACREDQTrainer]:
+    kind = config["algorithm"].get("kind", "dqn")
+    if kind == "ppo":
+        return PPOTrainer
+    if kind == "sac_redq":
+        return SACREDQTrainer
+    return Trainer
 
 
 def _run_arg(parser: argparse.ArgumentParser) -> None:

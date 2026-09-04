@@ -27,6 +27,8 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 15 | PPO, all-tracks with adaptive curriculum (full run) | 102 | `configs/classic_all_tracks_ppo.json` | 784.4s (manually stopped, user chose to return to DQN) | *not recorded* | 6.7% (2/30) best | 0.242 | complete — **stopped before verdict**: training attention had correctly shifted toward hard tracks (as designed) but not enough active time had passed to see whether they actually improved before the pivot back to DQN | — |
 | 16 | DQN, two-bonus reward, all-tracks (track id + n-step + wide net + balanced replay + gated curriculum) | 102 | `configs/classic_all_tracks_v3.json` | 1,376.6s (manually stopped, user wanted to try the progress ramp) | *not recorded* | 26.7% (8/30) best, stage 1 unlocked at ~101s | 0.393 | complete — **stopped**, broke through the sparse-success plateau on 9/10 stage-0 tracks (best result yet), see below | `policies/classic_intro_twobonus.gdp` |
 | 17 | DQN, two-bonus + progress-ramped bonus, all-tracks | 102 | `configs/classic_all_tracks_v3.json` | 7,958.8s (manually stopped, plateaued) | *not recorded* | 23.3% (7/30) best, plateaued from ~532s | 0.447 | complete — **stopped**, best formal result across every approach this session but never broke past 7/30 despite ~7,400s more training, a mid-run eval-robustness fix, and a 9h target; see "Session synthesis" below | `policies/classic_intro_ramped.gdp` |
+| 18 | SAC + REDQ (discrete, "REDQ-lite": ensemble=4/subset=2, UTD=1), all-tracks | 102 | `configs/classic_all_tracks_sac.json` | 4,039.8s (manually stopped, mid-run pivot to implement the head-clearance sensor, **not** a plateau stop) | 1.38M | 20.0% (6/30) best / 16.7% (5/30) final, stage 1 unlocked at ~675s | 0.351 best / 0.298 final | complete — **stopped**, see "SAC + REDQ: a new algorithm family" below | `policies/classic_sac_redq_interim.gdp` (interim) |
+| 19 | SAC + REDQ, all-tracks + head-clearance sensor | 134 | `configs/classic_all_tracks_sac.json` | 1,302.4s (manually stopped, mid-run pivot to add the speed bonus reward term, **not** a plateau stop) | 402k | 26.7% (8/30) best / 20.0% (6/30) final, stage 1 unlocked at ~773s | 0.334 best / 0.370 final | complete — **stopped**, see "Head-clearance sensor outcome" below | `policies/classic_sac_redq_headclear_interim.gdp` (interim) |
 
 ## Notes
 
@@ -513,3 +515,184 @@ that **single-track training is fast and reliable**: run #10 hit 100% finish on 
 simultaneously, which is inherently slower per-track than single-task training regardless of how
 well the multi-task interference itself is managed. This motivates moving away from one generalist
 network across all 30 tracks entirely -- see the next section.
+
+## SAC + REDQ: a new algorithm family
+
+After the per-track specialist pivot (`scripts/train_specialists.py`, one small network per track
+instead of one shared network across all 30) demonstrated the shared-network ceiling could be
+sidestepped entirely, the user asked to try one more single-shared-network approach before
+committing further to specialists: Soft Actor-Critic with Randomized Ensembled Double Q-learning
+(REDQ), a different algorithm family from both DQN (off-policy, epsilon-greedy, single critic) and
+PPO (on-policy, clipped surrogate) tried earlier this session.
+
+**Implementation** (`src/gravity_lab_rl/sac_trainer.py`, `algorithm.kind: "sac_redq"`): discrete SAC
+(Christodoulou 2019) -- a categorical actor plus an ensemble of independent critics, entropy
+temperature auto-tuned toward a target entropy instead of epsilon-greedy exploration -- combined
+with REDQ's (Chen et al. 2021) in-target subsampling: every critic update draws a random
+`subset_size`-of-`ensemble_size` subset of the *target* critics and bootstraps off their elementwise
+minimum, which controls the overestimation a naive high-update-ratio ensemble would otherwise
+amplify. Because the action space is discrete and small (9 actions), the target's expectation over
+actions is computed exactly (`Σ_a π(a|s')·(min_Q(s',a) − α·log π(a|s'))`) rather than by sampling.
+The actor is a plain `DenseQNetwork` -- identical in shape to the DQN/PPO networks -- so it exports
+through the existing `.gdp` path and `evaluate_model`'s argmax-based deterministic evaluation
+unchanged; critics are separate `DenseQNetwork` instances never exported. Reuses this session's
+existing infrastructure unchanged: per-track-balanced replay (`replay.py`), n-step returns
+(`NStepAccumulator`), progressive curriculum gating, best-checkpoint tracking, control.json
+pause/stop, checkpoint/resume. New config validation branch in `config.py`
+(`ensemble_size`, `subset_size`, `utd_ratio`, `tau`, `target_entropy_ratio`, `initial_alpha`).
+
+**Compute tradeoff, deliberately scaled down from the REDQ paper's defaults.** REDQ's headline
+result combines a large ensemble (paper default `N=10`) with a high update-to-data ratio (`G≈20`
+gradient updates per environment step) -- the ensemble subsampling is specifically what makes that
+high UTD safe from overestimation blowup. Both are expensive: this repo trains single-process on
+CPU, and every prior run in this log needed several million transitions of curriculum exposure to
+reach even the 7-9/30 ceiling, so an implementation that reproduced REDQ's full UTD would either
+need far more than 2h wall-clock or would starve the curriculum of transitions entirely. Shipped
+values were cut to `ensemble_size=4`, `subset_size=2`, `utd_ratio=1` (`configs/classic_all_tracks_sac.json`)
+-- keeping REDQ's core mechanism (randomized subset-of-ensemble target minimization) while dropping
+the extreme UTD, explicitly trading away most of REDQ's sample-efficiency headline for a throughput
+this hardware can sustain over a multi-track curriculum.
+
+**Validation before the long run**: a 45s single-track smoke test (`configs/classic_intro_sac.json`)
+reached 100% deterministic finish rate on Intro -- faster than PPO's 90s baseline (run #13a) and
+DQN's ~530s (run #10) -- and a resume/checkpoint round-trip preserved that result exactly. Full test
+suite (19/19) unaffected.
+
+**All-tracks outcome (run #18)**: launched under a watchdog (`scripts/train_watchdog.py`) against
+the same 2h target used throughout this session, using the unchanged two-bonus + progress-ramped
+reward from runs #16/#17 (no environment change this run). Cleared the stage-0 gate (50% aggregate
+finish rate) at **675s active training** -- unlocking stage 1 faster than every DQN/PPO run in this
+log except run #16's hand-tuned reward (~101s) -- and reached a best formal-eval score of **6/30
+(20.0%), mean progress 0.351** by the time it was stopped. Per-track: Intro, Shorty, Slope, Crackle,
+Knolls, Original solved at least once; stage-0's other 4 tracks (Deep, Cliff, Hole, Savvy) and all 10
+stage-1 tracks unsolved, though several stage-1 tracks (Hillclimb, Blocks, Spikehops, Pillar) showed
+real, growing mean progress (~0.33) rather than instant crashes by the time training stopped -- the
+same "engaging with the obstacle but not yet completing it" phase every prior run went through after
+its own stage-1 unlock.
+
+**This was a deliberate mid-run pivot, not a plateau stop** -- stopped at 4,039.8s (1.38M
+transitions) specifically to implement the head-clearance ray sensor below and start a fresh
+comparison run, not because SAC+REDQ's own trajectory had flattened out (best score was still
+climbing: 5/30 → 6/30 in the 30 minutes right before the stop). So 6/30 is a lower bound on what this
+run would have reached given the full 2h, not a verdict on the algorithm.
+
+**Throughput vs. sample efficiency**: this run's transition rate was ~342/s (1.38M transitions /
+4,039.8s active), 10-13x slower than every DQN/PPO all-tracks run that recorded a transition count
+(3,500-4,500/s, e.g. runs #6, #11, #12) -- expected, since one REDQ update round costs roughly 12
+forward + 5 backward passes across the actor and 4-critic ensemble per environment step (vs. DQN's
+~3 forward + 1 backward passes only once every 4 steps). But per-transition, SAC+REDQ reached 6/30
+using 4.6-8.7x *fewer* transitions than the DQN runs that reached comparable-or-better formal scores
+(run #6: 11.97M transitions for 7/30; run #12a v3 smoke: 6.32M for 5/30) -- consistent with REDQ's
+core sample-efficiency premise surviving even the scaled-down ensemble/UTD, but not enough of a
+wall-clock win under this session's CPU/2h constraints to make it a clear-cut improvement over DQN
+without a longer run to confirm where it actually plateaus.
+
+Deployed as an interim snapshot for hands-on testing: `policies/classic_sac_redq_interim.gdp`
+(best.gdp at the time of the stop, 6/30/0.351 -- superseded once the head-clearance run below
+produces its own best checkpoint).
+
+## Head-clearance sensor
+
+Hands-on play of run #18's policy, plus a direct question about how the obstacle sensor works,
+prompted tracing the decompiled physics engine (`gravity-lab/classic/src/GamePhysics.cpp`,
+`LevelLoader.cpp`) to check whether crash detection was really per-point circle-vs-track-segment
+collision, as suspected. It is: `GamePhysics::const175_1_half = {114688, 65536, 32768}` (F16
+fixed-point, ≈1.75/1.0/0.5 track-units) gives three radius classes, and body-part offsets in
+`GamePhysics::reset`'s per-point switch show physics point 5 sits directly above the center
+(~5 units up, all other points offset lower/sideways), has the *smallest* radius (0.5), and is the
+only point whose ground contact sets an immediate hard-crash flag (`field_36`) rather than the
+graduated bounce handling every other point gets -- strong evidence point 5 is the rider's head.
+Point 5's position was already in the observation (it's one of the "six physics points" every prior
+run trained against, just not individually labeled), so the actual gap was that the 32-ray obstacle
+sensor casts only from the *center* point, ~5 units below the head, and reports raw geometric
+distance rather than clearance (distance minus the colliding point's own radius).
+
+**Change** (`gravity-lab/src/classic_environment.cpp`, `include/gravity_lab/classic_environment.hpp`):
+a new, appended observation region -- same ray count and angles as the existing obstacle sensor
+(`Config::obstacle_ray_count`, deliberately *not* a second independently-configurable ray count, so
+every existing derivation of ray count from a policy's declared `observation_size` in
+`apps/ai_arcade.cpp`/`classic_policy_viewer.cpp` stayed correct with zero code changes) -- cast from
+physics point 5 instead of point 0, each entry `max(0, distance - head_radius) / kObstacleMaxRange`.
+`OBSERVATION_SIZE` grew 102 -> 134 (`kMaxObstacleRayCount` more slots, mirroring how the obstacle
+region itself is sized). Verified live in Python before training: head-clearance values track real
+geometry, diverge meaningfully from the same-angle obstacle-sensor value (sometimes tighter,
+sometimes looser, since the head is offset up and to the same x as the center), and sharpen sharply
+in the steps immediately before a crash. Both CMake trees rebuilt; `gravity_lab_classic_tests` and
+`pytest tests` (19/19) pass; old 28-wide and 102-wide policies still validate against the rebuilt
+shared library (the new region is a pure append, same prefix-compatibility guarantee as every prior
+region addition).
+
+### Head-clearance sensor outcome (run #19)
+
+Fresh run (no warm start -- 134-wide input is incompatible with run #18's 102-wide network), same
+`configs/classic_all_tracks_sac.json` hyperparameters and reward as run #18 (two-bonus +
+progress-ramped, unchanged) so the only variable was the new sensor region. Cleared the stage-0 gate
+at **773s** (vs run #18's 675s -- comparable) and reached **8/30 (26.7%), mean progress 0.334** by
+1,302.4s, when it was stopped -- already beating run #18's entire final result (6/30, reached only
+after 4,039.8s) in under a third of the time. Per-track: the same 5 tracks from run #18 (Intro,
+Shorty, Slope, Crackle, Knolls) plus 3 more (Cliff, Hole, Original) solved; stage-1 still at 0/30.
+Transition throughput was ~309/s (402k transitions / 1,302.4s), about 10% lower than run #18's
+~342/s -- the extra ray-casting and wider network input do cost a little, as expected, but nowhere
+near enough to explain the large finish-rate improvement.
+
+**Caveat, same as run #18**: this was also a deliberate mid-run pivot (to add the speed-bonus reward
+term below), stopped while still climbing, not at a plateau -- so this is a lower bound and a
+promising early signal, not a controlled, converged A/B result. Two runs is not enough to rule out
+noise (both runs' curriculum/replay/critic-subset randomness differs even with the same top-level
+seeds, since episode counts and timing differ), but an 8/30-by-1,302s vs 6/30-by-4,040s gap is large
+enough relative to the run-to-run variance seen elsewhere in this log (e.g. run #18 alone moved
+5/30->6/30 in its last 30 minutes) to be worth taking as a real, if unconfirmed, improvement.
+
+Deployed as an interim snapshot: `policies/classic_sac_redq_headclear_interim.gdp` (best.gdp at the
+time of the stop, 8/30/0.334).
+
+## Speed bonus reward term
+
+User request, after watching both SAC+REDQ runs: make the reward explicitly pay more for covering
+the same distance *faster*, on top of the existing linear per-percent-progress bonus -- e.g. moving
+from 5% to 20% progress in 5s should earn much more than doing it in 10s, not the same total.
+
+**Why the existing reward didn't already do this**: `kProgressPercentBonus * percent_moved` is
+linear in `percent_moved`, and `percent_moved` summed across the steps between two progress points
+always totals the same distance-covered regardless of how many steps that took -- so two attempts
+covering the same 15 percentage points earned essentially the same total linear-term reward whether
+spread over few big steps or many small ones. The only pre-existing pull toward speed was indirect
+(fewer steps means less accumulated idle penalty, and discounting mildly favors reward received
+sooner) -- nothing rewarded speed *explicitly*.
+
+**Change** (`gravity-lab/src/classic_environment.cpp`): since each environment step already spans a
+fixed slice of game time (`Config::frame_skip` physics ticks), `percent_moved` this step already
+*is* an instantaneous speed measurement, not just a distance one. Added a second, quadratic term on
+top of the existing linear bonus, applied only on positive-progress steps (so it doesn't touch the
+idle-vs-crash discounted-value math):
+```cpp
+double reward = percent_moved > 0.0
+    ? kProgressPercentBonus * percent_moved * progress_multiplier
+          + kSpeedBonusScale * percent_moved * percent_moved
+    : -kIdlePenalty;
+```
+Because this term is quadratic rather than linear, covering a given span of track in fewer/bigger
+steps earns strictly more total reward than the same total distance spread over more/smaller steps
+-- directly implementing "faster earns much more," without needing to track wall-clock time
+explicitly (it falls out of the fixed per-step time slice).
+
+**Calibration**: `kSpeedBonusScale = 0.25`, chosen against a measured full-throttle run (Intro,
+`ThrottleLeanForward` every step) rather than picked blind, continuing this log's established
+practice of calibrating reward constants against measured behavior instead of assumed constants
+(see the three reward-tuning attempts earlier in this log, each of which initially skipped this
+step). Typical positive `percent_moved` during full throttle measured **0.36-0.46/step**; at 0.4 the
+quadratic term (`0.25 * 0.4^2 = 0.04`) is almost exactly equal to the linear term
+(`0.1 * 0.4 = 0.04`) -- roughly doubling reward for genuinely fast movement, while at a slow/cautious
+`percent_moved = 0.05` the quadratic term is 1/8th of the linear one (negligible). Verified live: the
+quadratic term's share of total positive-step reward grows from 37% (`percent_moved=0.21`) to 52%
+(`percent_moved=0.40`) as speed increases toward the measured full-throttle range, and the engine's
+reward output matches the closed-form formula exactly at every sampled step. Both CMake trees
+rebuilt; `gravity_lab_classic_tests` and `pytest tests` (19/19) pass.
+
+Combined with the head-clearance sensor for the next run (run #20) -- unlike the sensor (an
+observation change, orthogonal to the reward), this changes what every prior run in this log
+optimized for, so run #20 is not a clean A/B against run #19 for the sensor's effect alone, only
+against the reward-tuning attempts much earlier in this log for the reward's effect. Warm-starting
+from run #19 was not an option regardless (different reward changes what a "good" Q-value/critic
+means, and the actor/critic architecture is unchanged but the target distribution they were trained
+against is not).

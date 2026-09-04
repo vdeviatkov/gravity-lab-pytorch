@@ -14,15 +14,19 @@ from . import (
     MAX_OBSTACLE_RAY_COUNT,
     OBSERVATION_SIZE,
     OBSTACLE_REGION_END,
+    TRACK_ID_REGION_END,
 )
 
 
 def valid_observation_size(size: int) -> bool:
-    """True if `size` is a real region boundary: base-only, base+some ray count, sensor+accel
-    without track id, or the full width including the track-id one-hot."""
-    if size in (BASE_OBSERVATION_SIZE, ACCELERATION_REGION_END, OBSERVATION_SIZE):
+    """True if `size` is a real region boundary: base-only, base+some obstacle-ray count,
+    sensor+accel without track id, track id without head-clearance rays, track id + some
+    head-clearance ray count, or the full width including the head-clearance sensor."""
+    if size in (BASE_OBSERVATION_SIZE, ACCELERATION_REGION_END, TRACK_ID_REGION_END, OBSERVATION_SIZE):
         return True
-    return BASE_OBSERVATION_SIZE < size <= OBSTACLE_REGION_END
+    if BASE_OBSERVATION_SIZE < size <= OBSTACLE_REGION_END:
+        return True
+    return TRACK_ID_REGION_END < size <= OBSERVATION_SIZE
 
 
 def default_config_path() -> Path:
@@ -74,6 +78,22 @@ def validate_config(config: dict[str, Any]) -> None:
             raise ValueError("gae_lambda must be in [0, 1]")
         if float(algo["value_coef"]) < 0.0 or float(algo["entropy_coef"]) < 0.0:
             raise ValueError("value_coef and entropy_coef must be nonnegative")
+    elif kind == "sac_redq":
+        if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
+            raise ValueError("invalid replay or batch size")
+        if int(algo.get("n_step", 1)) <= 0:
+            raise ValueError("n_step must be positive")
+        ensemble_size, subset_size = int(algo["ensemble_size"]), int(algo["subset_size"])
+        if ensemble_size < 2 or not 1 <= subset_size <= ensemble_size:
+            raise ValueError("ensemble_size must be >= 2 and subset_size in [1, ensemble_size]")
+        if int(algo["utd_ratio"]) <= 0:
+            raise ValueError("utd_ratio must be positive")
+        if not 0.0 < float(algo["tau"]) <= 1.0:
+            raise ValueError("tau must be in (0, 1]")
+        if not 0.0 < float(algo["target_entropy_ratio"]) <= 1.0:
+            raise ValueError("target_entropy_ratio must be in (0, 1]")
+        if float(algo["initial_alpha"]) <= 0.0:
+            raise ValueError("initial_alpha must be positive")
     else:
         raise ValueError(f"unknown algorithm kind: {kind!r}")
     norm = config["normalization"]
