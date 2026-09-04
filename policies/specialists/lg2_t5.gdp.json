@@ -3,97 +3,40 @@
   "checkpoint": "best.pt",
   "configuration": {
     "algorithm": {
-      "batch_size": 128,
-      "epsilon_decay_transitions": 1000000,
-      "epsilon_end": 0.05,
-      "epsilon_start": 0.3,
+      "clip_epsilon": 0.2,
+      "entropy_coef": 0.01,
+      "gae_lambda": 0.95,
       "gamma": 0.99,
-      "gradient_clip_norm": 10.0,
+      "gradient_clip_norm": 0.5,
       "hidden_sizes": [
         256,
         256
       ],
-      "learning_rate": 0.0005,
-      "n_step": 3,
-      "replay_capacity": 300000,
-      "replay_warmup": 10000,
-      "target_update_every": 2000,
-      "update_every": 4
-    },
-    "curriculum": {
-      "enabled": true,
-      "episodes_per_track": 5,
-      "stage_advance_finish_rate": 0.5,
-      "stages": [
-        {
-          "league": 0,
-          "level_group": 0,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        },
-        {
-          "league": 1,
-          "level_group": 1,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        },
-        {
-          "league": 2,
-          "level_group": 2,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        }
-      ]
+      "kind": "ppo",
+      "learning_rate": 0.0003,
+      "minibatch_size": 256,
+      "ppo_epochs": 4,
+      "rollout_length": 2048,
+      "value_coef": 0.5
     },
     "environment": {
       "frame_skip": 2,
-      "league": 0,
-      "level_group": 0,
+      "league": 2,
+      "level_group": 2,
       "level_pack": null,
       "max_episode_steps": 2000,
       "obstacle_ray_count": 32,
-      "track": 0
+      "track": 5
     },
     "environment_id": "gravity-lab-classic-v1",
     "experiment": {
-      "best_checkpoint_eval_interval_seconds": 90,
-      "checkpoint_interval_seconds": 30,
+      "best_checkpoint_eval_interval_seconds": 30,
+      "checkpoint_interval_seconds": 15,
       "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
-      "device": "cpu",
-      "duration_seconds": 21600.0,
-      "evaluation_episodes": 3,
-      "status_interval_seconds": 1,
-      "torch_num_threads": 1
+      "device": "auto",
+      "duration_seconds": 900.0,
+      "evaluation_episodes": 5,
+      "status_interval_seconds": 1
     },
     "format": "gravity-lab-rl-config-v1",
     "normalization": {
@@ -321,89 +264,34 @@
   "metadata": {
     "active_training_duration_seconds": 0.0,
     "algorithm_configuration": {
-      "batch_size": 128,
-      "epsilon_decay_transitions": 1000000,
-      "epsilon_end": 0.05,
-      "epsilon_start": 0.3,
+      "clip_epsilon": 0.2,
+      "entropy_coef": 0.01,
+      "gae_lambda": 0.95,
       "gamma": 0.99,
-      "gradient_clip_norm": 10.0,
+      "gradient_clip_norm": 0.5,
       "hidden_sizes": [
         256,
         256
       ],
-      "learning_rate": 0.0005,
-      "n_step": 3,
-      "replay_capacity": 300000,
-      "replay_warmup": 10000,
-      "target_update_every": 2000,
-      "update_every": 4
+      "kind": "ppo",
+      "learning_rate": 0.0003,
+      "minibatch_size": 256,
+      "ppo_epochs": 4,
+      "rollout_length": 2048,
+      "value_coef": 0.5
     },
     "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
     "cpu_architecture": "arm64",
-    "curriculum": {
-      "enabled": true,
-      "episodes_per_track": 5,
-      "stage_advance_finish_rate": 0.5,
-      "stages": [
-        {
-          "league": 0,
-          "level_group": 0,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        },
-        {
-          "league": 1,
-          "level_group": 1,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        },
-        {
-          "league": 2,
-          "level_group": 2,
-          "tracks": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ]
-        }
-      ]
-    },
+    "curriculum": null,
     "deterministic_accelerator_algorithms_enabled": false,
     "environment_configuration": {
       "frame_skip": 2,
-      "league": 0,
-      "level_group": 0,
+      "league": 2,
+      "level_group": 2,
       "level_pack": null,
       "max_episode_steps": 2000,
       "obstacle_ray_count": 32,
-      "track": 0
+      "track": 5
     },
     "environment_id": "gravity-lab-classic-v1",
     "experiment_repository": ".",
@@ -628,13 +516,9 @@
     "pytorch_version": "2.13.0",
     "resume_begins_fresh_episode": true,
     "resume_timestamps": [
-      "2026-09-03T06:25:18.566375+00:00",
-      "2026-09-03T07:33:51.459855+00:00",
-      "2026-09-03T07:45:54.326811+00:00",
-      "2026-09-03T18:07:38.953889+00:00",
-      "2026-09-03T18:08:33.836795+00:00"
+      "2026-09-03T22:27:40.873364+00:00"
     ],
-    "resumed_from": "artifacts/dqn_ramped_20260903/latest.pt",
+    "resumed_from": "artifacts/specialist_lg2_t5/latest.pt",
     "seeds": {
       "environment": 7,
       "epsilon_exploration": 13,
@@ -643,10 +527,10 @@
       "replay_sampling": 17,
       "validation": 1000007
     },
-    "selected_device": "cpu",
+    "selected_device": "mps",
     "torch_num_threads": 1,
     "training_end_timestamp": null,
-    "training_start_timestamp": "2026-09-03T06:24:20.610387+00:00"
+    "training_start_timestamp": "2026-09-03T21:28:03.770567+00:00"
   },
   "normalization": {
     "input_bias": [
@@ -860,8 +744,8 @@
     "kind": "identity"
   },
   "observation_size": 102,
-  "optimizer_update_count": 4837297,
+  "optimizer_update_count": 5248,
   "policy": "best.gdp",
-  "policy_sha256": "bda0f08062929a16840f9561ad2ea18d648b25f960a6fc7c6631bdf6f3d7b8fa",
-  "transition_count": 19359187
+  "policy_sha256": "b39d3b2bdaceb0d10adf61c0d4dc7b19a31c555bf9cd0d0abed68d5ebd63269c",
+  "transition_count": 335553
 }

@@ -370,7 +370,8 @@ class PPOTrainer:
                                 dones[-1] = True
                             env.close()
                             self.model.eval()
-                            eval_result = evaluate_model(self.model, self.config, episodes=1,
+                            eval_episodes = int(self.config["experiment"].get("evaluation_episodes", 1))
+                            eval_result = evaluate_model(self.model, self.config, episodes=eval_episodes,
                                                          device=self.device)
                             self.model.train()
                             score = (eval_result["finish_rate"], eval_result["mean_progress"])

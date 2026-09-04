@@ -26,7 +26,7 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 14 | Adaptive-curriculum smoke test | 102 | `configs/classic_all_tracks_ppo.json` (entropy_coef 0.03 + inverse-success-weighted track selection) | 60s | 364k | 3.3% (1/30) | 0.248 | complete — validated track-selection shift toward hard tracks before a long run, see below | — |
 | 15 | PPO, all-tracks with adaptive curriculum (full run) | 102 | `configs/classic_all_tracks_ppo.json` | 784.4s (manually stopped, user chose to return to DQN) | *not recorded* | 6.7% (2/30) best | 0.242 | complete — **stopped before verdict**: training attention had correctly shifted toward hard tracks (as designed) but not enough active time had passed to see whether they actually improved before the pivot back to DQN | — |
 | 16 | DQN, two-bonus reward, all-tracks (track id + n-step + wide net + balanced replay + gated curriculum) | 102 | `configs/classic_all_tracks_v3.json` | 1,376.6s (manually stopped, user wanted to try the progress ramp) | *not recorded* | 26.7% (8/30) best, stage 1 unlocked at ~101s | 0.393 | complete — **stopped**, broke through the sparse-success plateau on 9/10 stage-0 tracks (best result yet), see below | `policies/classic_intro_twobonus.gdp` |
-| 17 | DQN, two-bonus + progress-ramped bonus, all-tracks | 102 | `configs/classic_all_tracks_v3.json` | *pending* | *pending* | *pending* | *pending* | **in progress** | *pending* |
+| 17 | DQN, two-bonus + progress-ramped bonus, all-tracks | 102 | `configs/classic_all_tracks_v3.json` | 7,958.8s (manually stopped, plateaued) | *not recorded* | 23.3% (7/30) best, plateaued from ~532s | 0.447 | complete — **stopped**, best formal result across every approach this session but never broke past 7/30 despite ~7,400s more training, a mid-run eval-robustness fix, and a 9h target; see "Session synthesis" below | `policies/classic_intro_ramped.gdp` |
 
 ## Notes
 
@@ -379,6 +379,61 @@ double reward = percent_moved > 0.0
 `reward / percent_moved` tracked `0.1 * (1 + progress)` exactly across a live episode (0.093 at
 progress -0.07, climbing to 0.125 at progress 0.25). Rebuilt both CMake trees, `pytest tests`
 19/19, `gravity_lab_classic_tests` pass.
+
+## Eval-robustness bug: `evaluation_episodes` was hardcoded to 1
+
+While digging into why run #17's formal score stayed flat at 7/30 for ~1,250s despite steadily
+improving, broad cumulative per-track finish rates (most stage-0 tracks in the 15-90% range, not
+solved-or-not), found that the periodic best-checkpoint eval in both `trainer.py` and
+`ppo_trainer.py` hardcoded `episodes=1` in the `evaluate_model(...)` call, **ignoring the config's
+`evaluation_episodes` field entirely** (which was itself set to `1` in every all-tracks config).
+With most tracks now genuinely probabilistic (a "60%-likely" track fails its one formal-eval shot
+40% of the time), a single-episode snapshot across all 30 tracks is a very high-variance estimate
+of true competence, and the strict `score > self.best_score` gate meant an unlucky snapshot could
+never overwrite a lucky earlier one -- so the tracked "best" could lag far behind what the policy
+could actually do.
+
+**Fix**: both trainers now read `int(self.config["experiment"].get("evaluation_episodes", 1))` for
+the periodic eval instead of a hardcoded `1`; bumped `evaluation_episodes` to `3` in
+`classic_all_tracks_v3.json` and `classic_all_tracks_ppo.json` (different seed per episode per
+track via `evaluate_model`'s existing `actual_seed + episode` logic, so more episodes genuinely
+reduces variance rather than repeating the same deterministic trajectory). Since a checkpoint's
+config is embedded at save time, resuming from an existing checkpoint does *not* pick up a config
+file edit -- had to patch the saved checkpoint's embedded `config.experiment.evaluation_episodes`
+directly before resuming, to keep run #17's progress rather than restart from scratch. Verified
+active on the first post-fix eval (`best_metrics.episodes_per_environment == 3`,
+`episode_count == 90`).
+
+**Outcome**: the fairer measurement did not reveal a hidden higher score -- run #17's formal best
+stayed at 7/30 even under the 3-episode average, and cumulative per-track stats themselves
+flattened out over the following ~1,600s (several tracks' cumulative rates ticked down slightly),
+consistent with a genuine plateau rather than a measurement artifact. The bug was real and worth
+fixing regardless (any future run benefits from a less noisy best-checkpoint signal), but it was
+not the explanation for this particular plateau.
+
+## Session synthesis: why every shared-network approach lands in the same range
+
+Across the whole session, every variation tried on a single shared network across all 30 tracks --
+2 algorithms (DQN, PPO), 3 reward designs (potential-based shaping, two-bonus, progress-ramped
+two-bonus), replay balancing, progressive curriculum gating, adaptive inverse-success track
+selection, and a more robust evaluation metric -- converged to essentially the same **7-9/30
+(23-30%)** formal ceiling, with the same qualitative shape underneath: a handful of tracks reach
+80-95% cumulative finish rate, several reach double digits, and several stay near-zero (one, Deep,
+literally zero across thousands of attempts under both algorithms). Meanwhile, single-track
+training (no competition for network capacity or replay/rollout attention) is fast and reliable
+under both algorithms -- DQN ~530s, PPO ~90s -- every time it's been tried.
+
+That pattern -- consistent ceiling regardless of training-dynamics changes, combined with trivially
+reliable single-track convergence -- points at a capacity/interference ceiling in the *shared
+network across 30 tasks* premise itself, not in how that shared network is trained. Having now
+exhausted the training-dynamics levers available within that premise, the strongest remaining,
+evidence-backed option is the one set aside earlier in the session: per-track specialist models,
+dispatched by track at inference time (which the game's fixed 30-track roster makes trivial, unlike
+a setting requiring generalization to unseen tracks). At the demonstrated single-track convergence
+rate, training all 30 specialists is a bounded, achievable amount of compute (a few hours), and each
+one is the easy single-task problem this session has repeatedly proven this pipeline solves well --
+unlike the shared-network approach, which has now plateaued in the same range under every
+combination of fixes tried.
 
 ## Pivot to PPO
 

@@ -63,7 +63,7 @@
     "duration_seconds": 3600,
     "checkpoint_interval_seconds": 30,
     "status_interval_seconds": 1,
-    "evaluation_episodes": 1,
+    "evaluation_episodes": 3,
     "best_checkpoint_eval_interval_seconds": 90,
     "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
     "device": "cpu",

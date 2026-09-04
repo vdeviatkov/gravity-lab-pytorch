@@ -430,7 +430,8 @@ class Trainer:
                         # the in-progress episode is abandoned for the duration of this eval.
                         env.close()
                         self.online.eval()
-                        eval_result = evaluate_model(self.online, self.config, episodes=1,
+                        eval_episodes = int(self.config["experiment"].get("evaluation_episodes", 1))
+                        eval_result = evaluate_model(self.online, self.config, episodes=eval_episodes,
                                                      device=self.device)
                         self.online.train()
                         score = (eval_result["finish_rate"], eval_result["mean_progress"])
