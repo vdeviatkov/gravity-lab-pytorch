@@ -31,6 +31,7 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 19 | SAC + REDQ, all-tracks + head-clearance sensor | 134 | `configs/classic_all_tracks_sac.json` | 1,302.4s (manually stopped, mid-run pivot to add the speed bonus reward term, **not** a plateau stop) | 402k | 26.7% (8/30) best / 20.0% (6/30) final, stage 1 unlocked at ~773s | 0.334 best / 0.370 final | complete — **stopped**, see "Head-clearance sensor outcome" below | `policies/classic_sac_redq_headclear_interim.gdp` (interim) |
 | 20 | SAC + REDQ, all-tracks + head-clearance sensor + speed-bonus reward | 134 | `configs/classic_all_tracks_sac.json` | 12,513.99s (~3.48h; manually stopped, plateaued) | 3.46M | 30.0% (9/30) best / 20.0% (6/30) final, stage 1 unlocked by first eval | 0.456 best / 0.362 final | complete — **stopped**, best score plateaued at 9/30 from ~t=5211s (~85 min in) through the rest of the run (~2.9h with no improvement); see "Speed bonus reward term" outcome below | `policies/classic_sac_redq_headclear_speedbonus_interim.gdp` (interim) |
 | 21 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.05) | 134 | `configs/classic_all_tracks_sac.json` | 6,634.15s (~1.84h; manually stopped, curriculum over-concentration identified) | 2.12M | 26.7% (8/30) best / 3.3% (1/30) final, 0/30 stage-1 throughout | 0.414 best / 0.246 final | complete — **stopped**, adaptive curriculum over-concentrated on stage-1 once it tied near 0% success, degrading live training performance without a stage-1 payoff; see "Adaptive curriculum outcome" below | none deployed (did not beat run #20) |
+| 22 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.15) | 134 | `configs/classic_all_tracks_sac.json` | 6,660.29s (~1.85h; manually stopped by user, no further diagnosis pending) | 2.14M | 30.0% (9/30) best / 13.3% (4/30) final, stage 1 3/30-episodes | 0.454 best / 0.424 final | complete — **stopped**, matched run #20's peak (9/30/0.456→0.454) but reached it ~3x faster (t=1614s vs t=5211s) with a healthier stage0/stage1 attention split (~35%/65%, no decline recurrence); plateaued at 9/30 for the remaining ~1.3h with no further breakthrough; see "Rebalanced curriculum outcome" below | `policies/classic_sac_redq_curriculum_v2_interim.gdp` |
 
 ## Notes
 
@@ -807,3 +808,30 @@ guaranteeing mastered tracks a much larger residual share than the near-zero sha
 under the runaway state observed above. Peak-based progress reward is unchanged and kept -- it
 wasn't implicated in this specific regression (no evidence of reward-hacking recurrence, and the
 mechanism is sound by construction regardless of curriculum behavior).
+
+### Rebalanced curriculum outcome (run #22) -- fix confirmed, same ceiling
+
+Fresh run, `success_ema` floor raised to `0.15`, otherwise identical to run #21. The fix held for
+the run's full 6,660.29s (~1.85h): stage0/stage1 attention split stayed in a healthy 30-38%/62-70%
+range throughout (verified at four separate checkpoints across the run), and training-time finish
+rate/mean progress stayed noisy-but-flat (5.5-18.5% / 0.36-0.47 across dozens of 200-episode
+windows) with no repeat of run #21's sustained decline. Reached **9/30 (30.0%), mean progress
+0.454** by t=1614s (27 min) -- matching run #20's eventual peak (9/30/0.456) in roughly a third of
+run #20's time to get there (t=5211s), and via a different, healthier route: Downhill (stage-1)
+instead of Spikehops rounds out the ninth track, and stage-1 registered 3/30-episodes in the best
+eval (vs. run #20's exact-same 3/30 stage-1 count, so comparable stage-1 depth reached faster, not
+just stage-0 reshuffled).
+
+**But it plateaued at the same ceiling.** No improvement past 9/30 for the remaining ~1.3h of active
+training despite the healthier attention allocation -- stopped by explicit user request, not a
+fail-fast or decline trigger. Near-miss tracks (Indoor briefly hit 50% training-time finish rate in
+one window, Hillclimb reached 13.3%) showed real movement without ever converting to a formal-eval
+finish, the same "engaging but not yet consolidating" pattern seen in every prior run once it
+reaches this territory.
+
+**Assessment**: the curriculum fix (0.15 floor) is validated -- it reaches the same peak
+meaningfully faster with a demonstrably healthier training dynamic (no decline, balanced attention)
+-- but reaching the peak faster did not, on its own, break through *past* the peak. The ~9/30
+(30%) ceiling that DQN, PPO, and now three SAC+REDQ configurations have all separately converged to
+(see "Session synthesis" above) continues to hold across yet another set of changes. Deployed:
+`policies/classic_sac_redq_curriculum_v2_interim.gdp` (9/30/0.454, this run's best).
