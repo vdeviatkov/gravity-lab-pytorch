@@ -95,7 +95,7 @@
       "checkpoint_interval_seconds": 30,
       "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
       "device": "cpu",
-      "duration_seconds": 28800.0,
+      "duration_seconds": 14400.0,
       "evaluation_episodes": 3,
       "status_interval_seconds": 1,
       "torch_num_threads": 1
@@ -481,7 +481,7 @@
     },
     "environment_id": "gravity-lab-classic-v1",
     "experiment_repository": ".",
-    "experiment_repository_commit": "085f176c6459c617e6fe08aebd64302841107d2a",
+    "experiment_repository_commit": "a3a7e32825476bf8bb19a08883fafdcf787e631e",
     "format": "gravity-lab-rl-metadata-v1",
     "gravity_lab_repository": "gravity-lab",
     "gravity_lab_repository_commit": "7210e52967b4835ad725ee69291507ac24c8874f",
@@ -766,13 +766,10 @@
     "pytorch_version": "2.13.0",
     "resume_begins_fresh_episode": true,
     "resume_timestamps": [
-      "2026-09-04T06:03:46.997752+00:00",
-      "2026-09-04T06:26:32.233335+00:00",
-      "2026-09-04T06:31:37.140012+00:00",
-      "2026-09-04T07:16:12.104435+00:00",
-      "2026-09-04T07:36:53.753782+00:00"
+      "2026-09-04T23:32:57.160939+00:00",
+      "2026-09-04T23:36:58.677840+00:00"
     ],
-    "resumed_from": "artifacts/sac_redq_headclear_speedbonus_20260903_230337/latest.pt",
+    "resumed_from": "artifacts/sac_redq_curriculum_v2_20260904_163241/latest.pt",
     "seeds": {
       "environment": 7,
       "epsilon_exploration": 13,
@@ -784,7 +781,7 @@
     "selected_device": "cpu",
     "torch_num_threads": 1,
     "training_end_timestamp": null,
-    "training_start_timestamp": "2026-09-04T06:03:38.320711+00:00"
+    "training_start_timestamp": "2026-09-04T23:32:42.506196+00:00"
   },
   "normalization": {
     "input_bias": [
@@ -1062,8 +1059,8 @@
     "kind": "identity"
   },
   "observation_size": 134,
-  "optimizer_update_count": 1462604,
+  "optimizer_update_count": 402724,
   "policy": "best.gdp",
-  "policy_sha256": "8f9b8187e40bbee6f256b5c59e24c4efff9bb5f9bd6a40a8a673d76e7b9a0068",
-  "transition_count": 1467605
+  "policy_sha256": "8afbb5d7110624500e5c40d5d67115106e688c223826f8aec4035b48e7cf0b2e",
+  "transition_count": 407725
 }

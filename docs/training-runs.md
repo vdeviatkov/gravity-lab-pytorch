@@ -29,6 +29,8 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 17 | DQN, two-bonus + progress-ramped bonus, all-tracks | 102 | `configs/classic_all_tracks_v3.json` | 7,958.8s (manually stopped, plateaued) | *not recorded* | 23.3% (7/30) best, plateaued from ~532s | 0.447 | complete — **stopped**, best formal result across every approach this session but never broke past 7/30 despite ~7,400s more training, a mid-run eval-robustness fix, and a 9h target; see "Session synthesis" below | `policies/classic_intro_ramped.gdp` |
 | 18 | SAC + REDQ (discrete, "REDQ-lite": ensemble=4/subset=2, UTD=1), all-tracks | 102 | `configs/classic_all_tracks_sac.json` | 4,039.8s (manually stopped, mid-run pivot to implement the head-clearance sensor, **not** a plateau stop) | 1.38M | 20.0% (6/30) best / 16.7% (5/30) final, stage 1 unlocked at ~675s | 0.351 best / 0.298 final | complete — **stopped**, see "SAC + REDQ: a new algorithm family" below | `policies/classic_sac_redq_interim.gdp` (interim) |
 | 19 | SAC + REDQ, all-tracks + head-clearance sensor | 134 | `configs/classic_all_tracks_sac.json` | 1,302.4s (manually stopped, mid-run pivot to add the speed bonus reward term, **not** a plateau stop) | 402k | 26.7% (8/30) best / 20.0% (6/30) final, stage 1 unlocked at ~773s | 0.334 best / 0.370 final | complete — **stopped**, see "Head-clearance sensor outcome" below | `policies/classic_sac_redq_headclear_interim.gdp` (interim) |
+| 20 | SAC + REDQ, all-tracks + head-clearance sensor + speed-bonus reward | 134 | `configs/classic_all_tracks_sac.json` | 12,513.99s (~3.48h; manually stopped, plateaued) | 3.46M | 30.0% (9/30) best / 20.0% (6/30) final, stage 1 unlocked by first eval | 0.456 best / 0.362 final | complete — **stopped**, best score plateaued at 9/30 from ~t=5211s (~85 min in) through the rest of the run (~2.9h with no improvement); see "Speed bonus reward term" outcome below | `policies/classic_sac_redq_headclear_speedbonus_interim.gdp` (interim) |
+| 21 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.05) | 134 | `configs/classic_all_tracks_sac.json` | 6,634.15s (~1.84h; manually stopped, curriculum over-concentration identified) | 2.12M | 26.7% (8/30) best / 3.3% (1/30) final, 0/30 stage-1 throughout | 0.414 best / 0.246 final | complete — **stopped**, adaptive curriculum over-concentrated on stage-1 once it tied near 0% success, degrading live training performance without a stage-1 payoff; see "Adaptive curriculum outcome" below | none deployed (did not beat run #20) |
 
 ## Notes
 
@@ -696,3 +698,112 @@ against the reward-tuning attempts much earlier in this log for the reward's eff
 from run #19 was not an option regardless (different reward changes what a "good" Q-value/critic
 means, and the actor/critic architecture is unchanged but the target distribution they were trained
 against is not).
+
+### Combined outcome (run #20) -- new best, then a long plateau
+
+Same config as runs #18/#19, no warm start (reward changed, same reasoning as above). Initially
+extended to an 8h target mid-run (see "Wall-clock note" below) but stopped at 12,513.99s (~3.48h)
+once the plateau below was clear. Reached a new session-best of **9/30 (30.0%), mean progress
+0.456** -- ahead of both #18 (6/30) and #19 (8/30) -- and stage 1 registered its first-ever finishes
+across all three SAC+REDQ attempts (Downhill and Spikehops each solved at least once, though not
+always both simultaneously in the same eval snapshot -- see per-track flicker below). Per-track:
+the same 5 core stage-0 tracks from #19 (Intro, Shorty, Slope, Crackle, Knolls) plus Cliff, Original,
+and Savvy (all stage-0), plus Spikehops (stage-1).
+
+**The plateau**: best score reached 9/30 by t=5211s (~87 min in) and never improved again for the
+remaining ~2.9h of active training, despite the training-time finish rate and mean progress staying
+healthy and non-declining throughout (consistently 27-43% / 0.49-0.60 across 150-episode windows,
+right up to the stop) -- this is a genuine plateau on the *eval* metric specifically, not a collapse:
+several stage-1 tracks kept making real, growing progress in live training without ever converting to
+an eval-time finish (Blocks reached 13.3% training-time finish rate in the final 300 episodes;
+Downhill and Hillclimb sat at 0.46-0.48 mean progress). This is the same qualitative shape as every
+DQN/PPO plateau earlier in this log's "Session synthesis": a handful of tracks solid, several close
+but not converting, most others untouched.
+
+**Reward-hacking check, prompted by a user question**: does the per-step, previous-step-relative
+progress bonus (especially the new quadratic speed term) create an incentive to retreat cheaply
+(flat idle penalty, not proportional to retreat distance) then surge forward in one big step
+(quadratic-in-distance bonus), farming reward via oscillation instead of genuinely finishing tracks?
+Checked empirically: rolled the interim policy out deterministically on 5 stuck/near-miss tracks
+(Deep, Hillclimb, Downhill, Spikehops, Hole) and tracked progress against its own running peak.
+Max retreat-from-peak across all 5 was 0.0000-0.0021 -- negligible, essentially physics-settling
+noise, not a deliberate exploit. **Not the cause of this plateau**, but confirmed as a real latent
+risk in the reward's design (nothing prevents it structurally), addressed going into run #21 below.
+
+**Wall-clock note**: this run was extended from a 2h to an 8h target mid-run (at t=4572.8s) once
+the fail-fast gate had cleared and it looked promising. Discovered during that extension that most of
+the elapsed *wall-clock* time between check-ins was not landing as *active* training time -- 15
+consecutive gaps, mostly a repeating ~900s (15-minute) pattern, cost ~144 minutes of wall time with
+almost no training progress. Diagnosed as **not** actual macOS sleep (`pmset -g` showed the host
+continuously awake throughout, 166-day uptime, no reboot) but the session's own sandboxed execution
+environment pausing between conversation turns -- confirmed by a live 15-second check showing
+`active_training_seconds` advancing exactly 1:1 with wall-clock time while a turn was active, but
+losing hours to gaps between turns. `caffeinate` (tried first, tied to the watchdog process) had no
+effect, consistent with this being environment-level rather than guest-OS power management. No fix
+available from inside the session; noted here since it means "N hours of active training" can take
+substantially longer in calendar time than N hours if there are long gaps between check-ins, and
+because it explains why this run's real-world timestamps span far more than 3.48h.
+
+Deployed as an interim snapshot: `policies/classic_sac_redq_headclear_speedbonus_interim.gdp`
+(best.gdp at the time of the stop, 9/30/0.456).
+
+## Adaptive curriculum + peak-based progress (run #21 setup)
+
+Motivated by the run #20 plateau and the user's question about forcing more experimentation on hard
+tracks: two changes, one closing the reward-hacking risk found above, one attacking the plateau
+directly by reallocating training attention.
+
+**Peak-based progress bonus** (`gravity-lab/src/classic_environment.cpp`): the per-step progress
+bonus (both the linear per-percent term and the quadratic speed term) now fires only on progress
+*past the episode's peak so far*, not merely past the immediately preceding step -- retreating and
+re-covering already-visited ground earns nothing (still pays the flat idle penalty, same as before),
+so the only way to earn any positive reward is to reach genuinely new track position. This closes the
+retreat-then-surge loophole structurally (not just empirically-currently-unobserved) and adds a mild
+intrinsic push toward unexplored territory, which is also a partial, indirect answer to the "pay for
+trying something new" question -- new peak progress is the only thing that pays.
+
+**Adaptive curriculum** (`src/gravity_lab_rl/sac_trainer.py`): ported the inverse-success-weighted
+track selection already proven in `ppo_trainer.py` (see "Sparse-success plateau and the adaptive
+curriculum fix" above) -- replaces SAC's plain round-robin curriculum with selection weighted by
+`1 / (track_success_ema + 0.05)`, a slow EMA (alpha=0.05) per track. A struggling track gets picked
+far more often than a mastered one (up to ~20x at the 0%-vs-100%-success extremes), giving the
+stuck stage-1 tracks (Downhill, Hillclimb, Blocks, Bumps, Pillar -- all showing real but
+not-yet-converted progress in run #20) more rehearsal instead of the same fixed share every
+mastered track gets under round-robin. `track_success_ema` persists across checkpoints, same as PPO.
+
+### Adaptive curriculum outcome (run #21) -- over-concentration, stopped and re-tuned
+
+Fresh run (no warm start -- new reward scale), otherwise identical to run #20's config. Early
+signs were positive: stage-0 gate held, and **Hole was solved for the first time ever** across
+every SAC+REDQ attempt (runs #18-20 never converted a single Hole finish, training-time or eval) by
+t=1861s (31 min), reaching 8/30 -- roughly run #20's pace to the same count, but via a genuinely
+different, previously-unsolvable track rather than the same easy set.
+
+**Then it got worse, not just flat.** By t=3781s, `track_success_ema` showed every single stage-1
+track pinned at 0.0-0.08 -- not merely "still hard," but uniformly zero, because the weighting
+formula's `+0.05` floor gives a 0%-success track ~20x a mastered track's selection weight, and once
+*every* newly-unlocked stage-1 track ties at that floor simultaneously (as happens right when a
+whole stage unlocks at once, unlike PPO's original validation context of individually-differentiated
+per-track success rates), the curriculum dumps nearly all its budget there and starves stage-0 of
+refresher practice. This is a **runaway feedback loop**, not a one-time imbalance: a track that's
+losing gets picked more, which produces more losses (or at best no signal), which keeps its weight
+maxed, which keeps it getting picked. Training-time finish rate and mean progress both *declined*
+over the run's second half (finish rate 6-10% -> 0-3.5%, mean progress 0.38-0.40 -> 0.25-0.36 across
+150-200-episode windows) despite ~76 minutes of concentrated stage-1 rehearsal producing zero
+stage-1 formal-eval finishes. Stopped at 6,634.15s once this decline (not just a flat best-score) was
+clear -- final result **8/30 (26.7%), mean progress 0.414 best** -- essentially a wash against run
+#20's 9/30/0.456, i.e. this run's changes did not net-improve on their own combined merits, and the
+adaptive curriculum specifically regressed live training quality in its second half. (Final,
+non-best evaluation was much worse, 1/30/0.246 -- expected instability from stopping mid-training on
+whatever policy the last few concentrated-hard-track episodes happened to leave behind, not a
+meaningful number; `best_evaluation` is the one that matters, per this log's usual convention.)
+
+**Fix going into run #22**: raised the weighting floor from `0.05` to `0.15` in
+`_select_next_environment` (`sac_trainer.py` only -- `ppo_trainer.py` is unchanged, since this
+specific failure mode wasn't observed there and this session has no evidence it needs the same
+fix). Effect: caps the maximum weight ratio between a 0%-success track and a ~90%-mastered one at
+roughly `(0.9+0.15)/0.15 ≈ 7x` instead of `~20x`, leaving real priority for struggling tracks while
+guaranteeing mastered tracks a much larger residual share than the near-zero share they were getting
+under the runaway state observed above. Peak-based progress reward is unchanged and kept -- it
+wasn't implicated in this specific regression (no evidence of reward-hacking recurrence, and the
+mechanism is sound by construction regardless of curriculum behavior).

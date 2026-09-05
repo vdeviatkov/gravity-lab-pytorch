@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import random
 import signal
 import sys
 import time
@@ -16,7 +17,7 @@ import torch.nn.functional as F
 
 from . import ACTION_COUNT, DEFAULT_OBSTACLE_RAY_COUNT, TRACKS_PER_LEVEL_GROUP
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
-from .config import curriculum_environment_index, curriculum_environments, model_input_size
+from .config import curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import evaluate_model
 from .export import export_checkpoint
@@ -102,6 +103,15 @@ class SACREDQTrainer:
         self._last_best_eval_active = 0.0
         # Progressive difficulty gating -- see Trainer.unlocked_stages.
         self.unlocked_stages = 1
+        # Adaptive curriculum: track selection weighted toward whatever tracks currently have the
+        # lowest recent success rate, instead of plain round-robin -- ported from PPOTrainer (see
+        # docs/training-runs.md, "sparse-success plateau" and "Adaptive curriculum + peak-based
+        # progress"). A struggling track gets picked far more often, giving it more rehearsal
+        # instead of the same fixed share every mastered track gets under round-robin.
+        self.curriculum_rng = random.Random(seeds["replay_sampling"])
+        self.track_success_ema: dict[int, float] = {}
+        self._episodes_since_switch = 0
+        self._current_env_cfg: dict[str, Any] | None = None
         self.latest_metrics: dict[str, Any] = {}
         self.resume_checkpoint = resume_checkpoint
         self.metadata = make_metadata(config, self.device)
@@ -147,6 +157,9 @@ class SACREDQTrainer:
         self._last_checkpoint_active = self.active_elapsed
         self._last_best_eval_active = float(saved.get("last_best_eval_active", self.active_elapsed))
         self.unlocked_stages = int(saved.get("unlocked_stages", 1))
+        self.track_success_ema = saved.get("track_success_ema", {})
+        if "curriculum_rng_state" in saved:
+            self.curriculum_rng.setstate(saved["curriculum_rng_state"])
         best_score = saved.get("best_score")
         self.best_score = tuple(best_score) if best_score is not None else None
         self.best_metrics = saved.get("best_metrics")
@@ -155,10 +168,30 @@ class SACREDQTrainer:
     def current_active_elapsed(self) -> float:
         return self.active_elapsed + (0.0 if self._paused else time.monotonic() - self._active_since)
 
+    def _track_id(self, env_cfg: dict[str, Any]) -> int:
+        return int(env_cfg["level_group"]) * TRACKS_PER_LEVEL_GROUP + int(env_cfg["track"])
+
+    def _update_track_success(self, env_cfg: dict[str, Any], finished: bool) -> None:
+        # Slow-moving EMA (alpha=0.05, ~20-episode time constant): a single success shouldn't spike
+        # the estimate and immediately deprioritize a track that's still mostly failing.
+        track_id = self._track_id(env_cfg)
+        prior = self.track_success_ema.get(track_id, 0.5)
+        self.track_success_ema[track_id] = 0.95 * prior + 0.05 * float(finished)
+
+    def _select_next_environment(self, environments: list[dict[str, Any]]) -> dict[str, Any]:
+        # +0.15 floor (not PPO's +0.05 -- see docs/training-runs.md, "Adaptive curriculum outcome
+        # (run #21)") caps a 0%-success track's weight at ~7x a ~90%-mastered one, not ~20x. At
+        # +0.05, every track in a newly-unlocked stage ties at the same near-maximal weight the
+        # moment it starts failing, which starves already-mastered tracks of refresher practice in
+        # a self-reinforcing loop (losing -> picked more -> more losses -> weight stays maxed) --
+        # observed to actively degrade live training quality in run #21's second half, not just
+        # plateau. The higher floor keeps real priority for struggling tracks while guaranteeing
+        # mastered ones a much larger residual share.
+        weights = [1.0 / (self.track_success_ema.get(self._track_id(env), 0.5) + 0.15)
+                  for env in environments]
+        return self.curriculum_rng.choices(environments, weights=weights, k=1)[0]
+
     def _checkpoint_payload(self) -> dict[str, Any]:
-        environments = curriculum_environments(self.config, self.unlocked_stages)
-        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count,
-                                                         self.unlocked_stages)
         return {
             "online_network": self.actor.state_dict(),
             "critics": [critic.state_dict() for critic in self.critics],
@@ -169,6 +202,8 @@ class SACREDQTrainer:
             "log_alpha": self.log_alpha.detach().cpu(),
             "replay_buffer": self.replay.state_dict(),
             "subset_rng_state": self.subset_rng.bit_generator.state,
+            "curriculum_rng_state": self.curriculum_rng.getstate(),
+            "track_success_ema": self.track_success_ema,
             "transition_count": self.transition_count,
             "optimizer_update_count": self.optimizer_update_count,
             "completed_episode_count": self.completed_episode_count,
@@ -179,8 +214,7 @@ class SACREDQTrainer:
             "best_metrics": self.best_metrics,
             "last_best_eval_active": self._last_best_eval_active,
             "unlocked_stages": self.unlocked_stages,
-            "curriculum_state": {"environment_index": curriculum_index,
-                                 "environment": environments[curriculum_index]},
+            "curriculum_state": {"environment": self._current_env_cfg},
             "saved_at": _now(),
         }
 
@@ -195,8 +229,6 @@ class SACREDQTrainer:
         return path
 
     def _status(self, state: str, checkpoint: Path | None = None) -> None:
-        environments = curriculum_environments(self.config)
-        curriculum_index = curriculum_environment_index(self.config, self.completed_episode_count)
         update_status(self.control_path, {
             "state": state, "transitions": self.transition_count,
             "optimizer_updates": self.optimizer_update_count, "episodes": self.completed_episode_count,
@@ -204,9 +236,10 @@ class SACREDQTrainer:
             "alpha": float(self.log_alpha.exp().item()), "latest_metrics": self.latest_metrics,
             "checkpoint": _portable_path(checkpoint or self.run_dir / "latest.pt"),
             "best_score": list(self.best_score) if self.best_score is not None else None,
+            "unlocked_stages": self.unlocked_stages,
             "pid": os.getpid(), "device": str(self.device),
-            "curriculum_environment_index": curriculum_index,
-            "environment": environments[curriculum_index],
+            "environment": self._current_env_cfg,
+            "track_success_ema": self.track_success_ema,
         })
 
     def _pause_if_requested(self) -> bool:
@@ -313,10 +346,11 @@ class SACREDQTrainer:
         env: ClassicGravityEnv | None = None
         try:
             with metrics_path.open("a", encoding="utf-8", buffering=1) as metrics_stream:
-                active_index = curriculum_environment_index(self.config, self.completed_episode_count,
-                                                             self.unlocked_stages)
-                env_cfg = curriculum_environments(self.config, self.unlocked_stages)[active_index]
-                track_id = env_cfg["level_group"] * TRACKS_PER_LEVEL_GROUP + env_cfg["track"]
+                env_cfg = curriculum_environments(self.config, self.unlocked_stages)[0]
+                self._current_env_cfg = env_cfg
+                track_id = self._track_id(env_cfg)
+                episodes_per_track = int(self.config["curriculum"]["episodes_per_track"]) if (
+                    self.config.get("curriculum", {}).get("enabled", False)) else 1
 
                 def open_environment(configuration: dict[str, Any]) -> ClassicGravityEnv:
                     classic = ClassicConfig(
@@ -368,16 +402,20 @@ class SACREDQTrainer:
                         }
                         metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
                         metrics_stream.flush()
-                        next_index = curriculum_environment_index(self.config, self.completed_episode_count,
-                                                                   self.unlocked_stages)
-                        if next_index != active_index:
-                            env.close()
-                            env = None
-                            active_index = next_index
-                            env_cfg = curriculum_environments(self.config, self.unlocked_stages)[active_index]
-                            track_id = env_cfg["level_group"] * TRACKS_PER_LEVEL_GROUP + env_cfg["track"]
-                            env = open_environment(env_cfg)
-                            track_name = env.track_name
+                        self._update_track_success(env_cfg, step.finished)
+                        self._episodes_since_switch += 1
+                        if self._episodes_since_switch >= episodes_per_track:
+                            self._episodes_since_switch = 0
+                            candidates = curriculum_environments(self.config, self.unlocked_stages)
+                            new_cfg = self._select_next_environment(candidates)
+                            if new_cfg != env_cfg:
+                                env.close()
+                                env = None
+                                env_cfg = new_cfg
+                                self._current_env_cfg = env_cfg
+                                track_id = self._track_id(env_cfg)
+                                env = open_environment(env_cfg)
+                                track_name = env.track_name
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                             :self.observation_size]
                         episode_reward, episode_length = 0.0, 0
