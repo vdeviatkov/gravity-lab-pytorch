@@ -20,6 +20,7 @@ from .evaluation import evaluate_model
 from .export import export_checkpoint
 from .model import ActorCriticNetwork, select_device
 from .playback import game_repo, require_integration
+from .reward import RewardConfig, step_reward
 from .trainer import _now, _portable_path, make_metadata
 
 
@@ -281,6 +282,8 @@ class PPOTrainer:
                 track_name = env.track_name
                 observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                     :self.observation_size]
+                reward_config = RewardConfig.from_config(self.config)
+                peak_progress = observation[0]
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 stop_early = False
 
@@ -303,16 +306,18 @@ class PPOTrainer:
                             action = distribution.sample()
                             log_prob = distribution.log_prob(action)
                         step = env.step(int(action.item()))
+                        reward, peak_progress = step_reward(reward_config, peak_progress, step.observation[0],
+                                                            step.finished, step.crashed)
                         observations.append(observation)
                         actions.append(int(action.item()))
                         log_probs.append(float(log_prob.item()))
                         values.append(float(value.item()))
-                        rewards.append(step.reward)
+                        rewards.append(reward)
                         done = step.terminated or step.truncated
                         dones.append(done)
                         observation = step.observation[:self.observation_size]
                         self.transition_count += 1
-                        episode_reward += step.reward
+                        episode_reward += reward
                         episode_length += 1
                         if done:
                             self.completed_episode_count += 1
@@ -346,6 +351,7 @@ class PPOTrainer:
                             observation = env.reset(
                                 seeds["environment"] + self.completed_episode_count)[
                                 :self.observation_size]
+                            peak_progress = observation[0]
                             episode_reward, episode_length = 0.0, 0
                         now = time.monotonic()
                         if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
@@ -396,6 +402,7 @@ class PPOTrainer:
                             observation = env.reset(
                                 seeds["environment"] + self.completed_episode_count)[
                                 :self.observation_size]
+                            peak_progress = observation[0]
                             episode_reward, episode_length = 0.0, 0
                         if self.current_active_elapsed() >= duration:
                             break

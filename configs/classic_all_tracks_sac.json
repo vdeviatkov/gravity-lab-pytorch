@@ -380,5 +380,13 @@
     "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
     "device": "cpu",
     "torch_num_threads": 1
+  },
+  "reward": {
+    "finish_bonus": 10.0,
+    "crash_penalty": 5.0,
+    "idle_penalty": 0.1,
+    "progress_percent_bonus": 0.1,
+    "progress_ramp_factor": 1.0,
+    "speed_bonus_scale": 0.25
   }
 }

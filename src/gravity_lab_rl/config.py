@@ -16,6 +16,7 @@ from . import (
     OBSTACLE_REGION_END,
     TRACK_ID_REGION_END,
 )
+from .reward import validate_reward_config
 
 
 def valid_observation_size(size: int) -> bool:
@@ -129,6 +130,7 @@ def validate_config(config: dict[str, Any]) -> None:
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")
+    validate_reward_config(config)
 
 
 def model_input_size(config: dict[str, Any]) -> int:

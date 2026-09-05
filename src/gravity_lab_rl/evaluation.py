@@ -8,6 +8,7 @@ import torch
 from . import DEFAULT_OBSTACLE_RAY_COUNT
 from .config import curriculum_environments
 from .model import DenseQNetwork
+from .reward import RewardConfig, step_reward
 
 
 def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int | None = None,
@@ -16,6 +17,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
 
     count = int(episodes or config["experiment"]["evaluation_episodes"])
     first_seed = int(seed if seed is not None else config["seeds"]["final_evaluation"])
+    reward_config = RewardConfig.from_config(config)
     rows: list[dict[str, Any]] = []
     model.eval()
     # The environment always returns OBSERVATION_SIZE values; truncate to this model's actual
@@ -38,6 +40,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
                 episode_seed = actual_seed + episode
                 observation = env.reset(episode_seed)[:observation_size]
                 reward_total = 0.0
+                peak_progress = observation[0]
                 last = None
                 for length in range(1, env_cfg["max_episode_steps"] + 1):
                     with torch.inference_mode():
@@ -45,7 +48,9 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
                                                       device=device))
                         action = int(torch.argmax(q_values).item())
                     last = env.step(action)
-                    reward_total += last.reward
+                    reward, peak_progress = step_reward(reward_config, peak_progress, last.observation[0],
+                                                        last.finished, last.crashed)
+                    reward_total += reward
                     observation = last.observation[:observation_size]
                     if last.terminated or last.truncated:
                         break

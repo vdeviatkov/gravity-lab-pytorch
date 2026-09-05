@@ -835,3 +835,58 @@ meaningfully faster with a demonstrably healthier training dynamic (no decline, 
 (30%) ceiling that DQN, PPO, and now three SAC+REDQ configurations have all separately converged to
 (see "Session synthesis" above) continues to hold across yet another set of changes. Deployed:
 `policies/classic_sac_redq_curriculum_v2_interim.gdp` (9/30/0.454, this run's best).
+
+## Reward moved out of the engine into this repo
+
+Not a training run -- an architectural split, prompted by how much friction this session's reward
+tuning caused: every reward change (runs #16-#21's two-bonus, progress-ramp, speed-bonus, and
+peak-based-progress iterations) required editing `gravity-lab/src/classic_environment.cpp` and
+rebuilding *both* CMake trees (the shared library and the repo-root `build-native`) before it could
+be tested, purely because the reward formula and its shaping constants lived in the game engine
+submodule rather than in this training repo.
+
+**Principle**: `gravity-lab` (the submodule) is game logic -- physics simulation and an API surface
+a caller steps/resets/observes. Reward design is a training concern and belongs here. The split was
+already almost free: `StepResult`/`ClassicStepResult`/`gdc_step_result` already exposed everything
+needed to compute any reward externally -- `observation[0]` is progress, and `finished`/`crashed`/
+`truncated` are terminal flags -- so the fix was to stop computing a reward field at all, not to add
+new API surface.
+
+**Submodule changes** (`gravity-lab`, commit history there): removed `reward` from `StepResult`
+(`classic_environment.hpp`/`.cpp`), `gdc_step_result` (`classic_c_api.h`/`.cpp`), and
+`ClassicStepResult` (`python/gravity_lab/classic_env.py`); removed all reward constants and the
+`peak_progress` bookkeeping that existed solely to support the old in-engine reward (Python trainers
+now track their own peak progress, trivially, from the same `observation[0]` they already receive
+every step). Updated every consumer that read the old `reward` field: `apps/classic_headless.cpp`
+and `apps/classic_policy_viewer.cpp` (and this repo's `apps/ai_arcade.cpp`) just dropped the
+reward column/display, since a viewer has no reward to show once the engine doesn't define one;
+`apps/classic_q_learning.cpp` and `python/examples/classic_tabular_q.py` are real (if legacy)
+baselines that need *some* reward to learn from, so each got its own small, self-contained
+`reward_for(...)`, local to that file and unrelated to this repo's reward design.
+`tests/cpp/test_classic_environment.cpp`'s reward-magnitude assertions were redundant with the
+`finished`/`crashed` flag assertions already next to them, so they were simply dropped rather than
+replaced. `docs/classic-rl.md` and `README.md` updated to state plainly that reward is not part of
+the environment. `gravity_lab_classic_tests` (19/19 -> still all pass, count unaffected by this
+specific change) and both native apps rebuilt clean.
+
+**This repo's changes**: new `src/gravity_lab_rl/reward.py` -- `RewardConfig` (a frozen dataclass
+with the same six constants and defaults every prior run already used: `finish_bonus=10.0`,
+`crash_penalty=5.0`, `idle_penalty=0.1`, `progress_percent_bonus=0.1`, `progress_ramp_factor=1.0`,
+`speed_bonus_scale=0.25`) and `step_reward(...)`, a direct port of the peak-based formula from run
+#21's engine code, now pure Python. `RewardConfig.from_config` reads an optional `reward` block from
+a training config (`config.py` validates it -- unknown fields rejected, `idle_penalty`/
+`crash_penalty` must be positive), so tuning any constant is now a JSON edit, not a C++ change plus
+a two-tree rebuild -- exactly the friction this session hit five separate times. Wired into all
+three trainers (`trainer.py`, `ppo_trainer.py`, `sac_trainer.py`) and `evaluation.py`: each now
+tracks its own `peak_progress` per episode (reset alongside every `env.reset()` call) and calls
+`step_reward` right after `env.step()`, replacing the removed `step.reward` field. `configs/
+classic_intro_sac.json` and `configs/classic_all_tracks_sac.json` now carry an explicit `reward`
+block (values identical to the defaults) so the constants are visible in the config a run actually
+used, not just in `reward.py`'s defaults. New `tests/test_reward.py` (11 cases: idle penalty,
+retreat-earns-flat-not-proportional, new-peak bonus matches the closed-form formula, recovering to
+below-peak earns nothing, surging past peak only rewards the new slice, finish/crash additivity,
+config validation, override/default merging) plus a `RewardConfig`-based fix to
+`tests/test_environment_integration.py`'s now-stale reward assertion. Full suite: 30/30. Re-ran the
+SAC single-track smoke test after the change -- mean reward 39.15, 100% finish, identical to the
+pre-refactor number -- confirming the externalized formula reproduces the old in-engine one exactly,
+not just structurally.

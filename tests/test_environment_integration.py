@@ -23,4 +23,4 @@ def test_classic_environment_smoke():
         observation = env.reset(7)
         result = env.step(1)
         assert len(observation) == OBSERVATION_SIZE and len(result.observation) == OBSERVATION_SIZE
-        assert isinstance(result.reward, float)
+        assert isinstance(result.observation[0], float)
