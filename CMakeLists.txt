@@ -11,7 +11,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/gravity-lab/build-classi
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/gravity-lab/build-classic-rl")
 
 set(GRAVITY_LAB_BUILD_CLASSIC ON CACHE BOOL "" FORCE)
-set(GRAVITY_LAB_BUILD_DESKTOP OFF CACHE BOOL "" FORCE)
 set(GRAVITY_LAB_BUILD_TESTS ON CACHE BOOL "" FORCE)
 add_subdirectory(gravity-lab gravity-lab-build)
 

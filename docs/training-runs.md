@@ -890,3 +890,45 @@ config validation, override/default merging) plus a `RewardConfig`-based fix to
 SAC single-track smoke test after the change -- mean reward 39.15, 100% finish, identical to the
 pre-refactor number -- confirming the externalized formula reproduces the old in-engine one exactly,
 not just structurally.
+
+## Removed the RL sandbox and legacy training demos from the submodule
+
+Follow-up to the reward split above, prompted by a user question about `gravity_lab_sandbox` (an
+SDL2 viewer for a completely separate, second physics environment bundled in `gravity-lab`,
+unrelated to the classic engine this repo has trained against all session). Auditing what else in
+the submodule wasn't "game logic or an API surface for training" turned up more of the same
+category of thing the reward split had just fixed: whole training algorithms and a second
+environment living in what's supposed to be a thin game/engine layer.
+
+**Removed from `gravity-lab`**: the entire legacy `gravity-lab-sandbox-v1` environment (`src/
+environment.cpp`, `src/map.cpp`, `src/c_api.cpp`, their headers, `apps/desktop.cpp` [the sandbox
+viewer], `apps/headless.cpp`, `python/gravity_lab/env.py`, `maps/*.gdmap`, `tests/cpp/
+test_environment.cpp`, `tests/python/test_env.py`, `docs/environment.md`) -- confirmed via grep
+that nothing in this repo's pipeline ever imported `GravityEnv`/`Action`/`Config`/`StepResult` from
+it, only `ClassicConfig`/`ClassicGravityEnv`/`DenseQPolicy`. Also removed the two legacy training
+demos that duplicated actual RL algorithms inside the "game" repo (`apps/classic_q_learning.cpp`,
+`python/examples/classic_tabular_q.py`, plus the trivial `random_agent.py`/`tabular_q.py`/
+`test_classic_q_learning.py` that only existed to support them) -- a full tabular Q-learning
+implementation is exactly the kind of thing that belongs in a training repository, not the engine,
+by the same principle as the reward split two sections up. Kept `classic_headless.cpp` and
+`classic_random_agent.py`: both are zero-training observational tools (dump a CSV / print progress
+for a fixed policy), useful as native/Python sanity checks of the environment itself, not training
+code. `CMakeLists.txt` lost the `GRAVITY_LAB_BUILD_DESKTOP` option and every target tied to the
+removed code (`gravity_lab_core`, `gravity_lab_c`, `gravity_lab_headless`, `gravity_lab_sandbox`,
+`gravity_lab_classic_q`, `gravity_lab_tests`, and their ctest entries); `README.md`, `AGENTS.md`,
+`docs/classic-rl.md`, and `docs/reproducibility.md` updated to match (`AGENTS.md`'s contract-change
+bullet now also explicitly excludes reward, matching the split above). Bumped to `0.4.0` in both
+`CMakeLists.txt` and `pyproject.toml` given the public API surface (`gravity_lab.__init__`) shrank.
+
+**This repo**: removed the now-unused `GRAVITY_LAB_BUILD_DESKTOP` cache-forcing line from the
+root `CMakeLists.txt` and the matching flag from `scripts/bootstrap.sh` (both had always forced it
+`OFF` anyway -- the sandbox was never part of this project's build, just present as dead weight to
+configure around).
+
+**Verification**: both CMake trees deleted and reconfigured from scratch (not just incrementally
+rebuilt, given how many targets were removed) -- clean builds, zero new warnings. Full `ctest` (4/4:
+policy round-trip, classic environment contract, viewer validate, viewer smoke) and Python suite
+(30/30) pass. Re-validated the currently-deployed policy against the rebuilt shared library and
+reran a live SAC training smoke test end to end (100% finish, mean reward 38.6, consistent with
+every prior run of this exact config) to confirm the trimmed submodule still trains correctly, not
+just that it compiles.

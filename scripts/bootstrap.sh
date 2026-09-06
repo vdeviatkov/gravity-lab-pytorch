@@ -42,7 +42,7 @@ if [ "$GAME_REPO" = "$ROOT/gravity-lab" ] && { [ ! -f "$LIBRARY" ] || [ ! -x "$V
   cmake --build "$ROOT/build-native" --config Release
 elif [ ! -f "$LIBRARY" ] || [ ! -x "$VIEWER" ]; then
   echo "Building the overridden Gravity Lab checkout..."
-  cmake -S "$GAME_REPO" -B "$BUILD_DIR" -DGRAVITY_LAB_BUILD_CLASSIC=ON -DGRAVITY_LAB_BUILD_DESKTOP=OFF
+  cmake -S "$GAME_REPO" -B "$BUILD_DIR" -DGRAVITY_LAB_BUILD_CLASSIC=ON
   cmake --build "$BUILD_DIR" --config Release
 fi
 
