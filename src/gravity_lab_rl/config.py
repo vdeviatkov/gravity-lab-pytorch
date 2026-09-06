@@ -35,11 +35,12 @@ def default_config_path() -> Path:
 
 
 def with_experiment_defaults(config: dict[str, Any]) -> dict[str, Any]:
-    """Enable reusable all-map checkpoint videos unless explicitly disabled."""
+    """Enable three representative map videos and a training plot unless disabled."""
     result = copy.deepcopy(config)
     experiment = result['experiment']
     experiment.setdefault('map_overlay_after_training', True)
-    experiment.setdefault('map_overlay_tracks', 'all')
+    experiment.setdefault('map_overlay_tracks', '0:0,1:0,2:0')
+    experiment.setdefault('training_plot_after_training', True)
     if experiment['map_overlay_after_training']:
         experiment.setdefault('timelapse_interval_seconds', 300)
     return result

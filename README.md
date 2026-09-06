@@ -4,7 +4,8 @@ PyTorch Double DQN training and graphical policy playback for
 `gravity-lab-classic-v1`. The faithful game and physics are included as the `gravity-lab/` Git
 submodule. A small trained policy is bundled, so AI Arcade works immediately after setup.
 
-Training generates checkpoint replay videos for all 30 maps by default.
+Training generates a results plot and three checkpoint replay videos by default:
+the first map in each level group. Request `--tracks all` for all 30 maps.
 Complete map assets, video prerequisites, and opt-out settings are described in
 [Full-map training videos](docs/map-videos.md).
 

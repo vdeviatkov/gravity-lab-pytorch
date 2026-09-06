@@ -83,16 +83,33 @@ class MapOverlayTest(unittest.TestCase):
         source = {'experiment': {}, 'seeds': {'final_evaluation': 12}}
         cfg = with_experiment_defaults(source)
         self.assertEqual(source['experiment'], {})
+        explicit = with_experiment_defaults({'experiment': {'map_overlay_tracks': 'all'}})
+        self.assertEqual(explicit['experiment']['map_overlay_tracks'], 'all')
+        self.assertTrue(cfg['experiment']['training_plot_after_training'])
         self.assertTrue(cfg['experiment']['map_overlay_after_training'])
-        self.assertEqual(cfg['experiment']['map_overlay_tracks'], 'all')
+        self.assertEqual(cfg['experiment']['map_overlay_tracks'], '0:0,1:0,2:0')
         self.assertEqual(cfg['experiment']['timelapse_interval_seconds'], 300)
         with tempfile.TemporaryDirectory() as temp:
             with patch('gravity_lab_rl.video.subprocess.run') as command:
                 generate_training_videos(Path(temp), source)
             args = command.call_args.args[0]
-            self.assertEqual(args[args.index('--tracks') + 1], 'all')
+            self.assertEqual(args[args.index('--tracks') + 1], '0:0,1:0,2:0')
             source['experiment']['map_overlay_after_training'] = False
             with patch('gravity_lab_rl.video.subprocess.run') as command:
                 generate_training_videos(Path(temp), source)
             command.assert_not_called()
         self.assertNotIn('timelapse_interval_seconds', with_experiment_defaults(source)['experiment'])
+
+    def test_training_plot_runs_even_when_videos_are_disabled(self):
+        from gravity_lab_rl.video import generate_training_videos
+        cfg = {'experiment': {'map_overlay_after_training': False},
+               'seeds': {'final_evaluation': 12}}
+        with tempfile.TemporaryDirectory() as temp:
+            run = Path(temp)
+            (run / 'metrics.jsonl').write_text('{}\n')
+            with patch('gravity_lab_rl.video.subprocess.run') as command:
+                generate_training_videos(run, cfg)
+            command.assert_called_once()
+            self.assertTrue(command.call_args.args[0][1].endswith('plot_progress.py'))
+            status = json.loads((run / 'training_plot_status.json').read_text())
+            self.assertEqual(status['status'], 'complete')

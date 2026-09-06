@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from gravity_lab_rl.checkpoint import load_checkpoint, save_checkpoint  # noqa: E402
-from gravity_lab_rl.control import resolve_run  # noqa: E402
+from gravity_lab_rl.control import atomic_write_json, read_control, resolve_run  # noqa: E402
 
 
 def _active_seconds(checkpoint_path: Path) -> float:
@@ -53,6 +53,7 @@ def main() -> int:
     gravity_lab_rl = str(ROOT / ".venv" / "bin" / "gravity-lab-rl")
 
     restarts = 0
+    status_path = run_dir / 'watchdog.json'
     while True:
         active = _active_seconds(checkpoint_path)
         if active >= args.duration_seconds:
@@ -64,11 +65,21 @@ def main() -> int:
             gravity_lab_rl, "resume", "--run-id", args.run_id,
             "--duration-seconds", str(args.duration_seconds), "--device", args.device,
         ])
+        atomic_write_json(status_path, {'state': 'running', 'trainer_pid': process.pid,
+                                       'restarts': restarts, 'target_seconds': args.duration_seconds})
         stalled = False
         last_seen_mtime = control_path.stat().st_mtime if control_path.is_file() else time.time()
         last_change = time.monotonic()
         while process.poll() is None:
             time.sleep(args.poll_interval)
+            control = read_control(control_path)
+            # Final evaluation/plot/video generation can take much longer than
+            # the physics stall timeout. The active training target is already
+            # reached, so let post-processing finish without restarting it.
+            if (float(control.get('active_training_seconds', 0)) >= args.duration_seconds
+                    or control.get('state') in ('paused', 'evaluating', 'stopped')):
+                last_change = time.monotonic()
+                continue
             mtime = control_path.stat().st_mtime if control_path.is_file() else last_seen_mtime
             if mtime != last_seen_mtime:
                 last_seen_mtime = mtime
@@ -81,6 +92,9 @@ def main() -> int:
                   "killing and resuming past it")
             process.kill()
             process.wait()
+            if read_control(control_path).get('requested') == 'stop':
+                atomic_write_json(status_path, {'state': 'stopped', 'restarts': restarts})
+                return 0
             restarts += 1
             if restarts > args.max_restarts:
                 print(f"giving up after {restarts} stalls", file=sys.stderr)
@@ -91,8 +105,12 @@ def main() -> int:
         if code != 0:
             print(f"resume exited with code {code}; not a stall, stopping", file=sys.stderr)
             return code
-        # A clean exit before reaching the target duration should not happen in practice,
-        # but loop back and let the active-seconds check above decide whether to continue.
+        # A clean user stop must remain stopped rather than immediately resuming.
+        control = read_control(control_path)
+        state = 'complete' if float(control.get('active_training_seconds', 0)) >= args.duration_seconds else 'stopped'
+        atomic_write_json(status_path, {'state': state, 'restarts': restarts,
+                                       'active_training_seconds': control.get('active_training_seconds', 0)})
+        return 0
 
 
 if __name__ == "__main__":

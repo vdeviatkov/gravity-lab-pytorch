@@ -21,8 +21,8 @@ Generate checkpoint replays for selected maps in an existing training run:
   --run-id sac_redq_finishbonus_only_20260906_021909 --tracks 1:2
 ```
 
-Omit `--tracks` to render every environment in the run's evaluation protocol,
-including its configured leagues. `--tracks all` explicitly selects all 30 maps.
+Omit `--tracks` to render the first map in each level group: `0:0,1:0,2:0`
+(three videos). `--tracks all` explicitly selects all 30 maps.
 Use `--league N` to override bike league. Nonmatching group/league pairs get a
 `_leagueN` suffix so their outputs do not overwrite each other. `--run-dir PATH`
 accepts a run outside the standard artifacts directory.
@@ -52,10 +52,11 @@ videos are replaced only after encoding succeeds.
 
 ## Automatic generation after training
 
-For DQN, PPO, and SAC/REDQ, every run automatically generates videos for all 30
-maps after final evaluation when training reaches its time budget. User-stopped
+For DQN, PPO, and SAC/REDQ, every run automatically generates a results plot and
+three videos (`0:0,1:0,2:0`) after final evaluation when training reaches its time budget. User-stopped
 runs skip rendering unless `experiment.map_overlay_on_stop` is explicitly true. Missing settings default to
-`map_overlay_after_training: true`, `map_overlay_tracks: "all"`, and a policy
+`map_overlay_after_training: true`, `map_overlay_tracks: "0:0,1:0,2:0"`,
+`training_plot_after_training: true`, and a policy
 snapshot every 300 seconds. New runs also save
 the initial policy, and resumed runs save their starting policy. The final policy
 is always included, even if training ends before the next snapshot interval.
@@ -70,8 +71,8 @@ Optional experiment settings:
 }
 ```
 
-Omit `map_overlay_tracks` to generate all 30 maps. Set it to a list such as
-`"0:0,1:2"` to limit rendering. Set `timelapse_interval_seconds` to a shorter
+Omit `map_overlay_tracks` to generate the three default videos. Set it to `"all"`
+for all 30, or a list such as `"0:0,1:2"` for specific maps. Set `timelapse_interval_seconds` to a shorter
 interval for more snapshots (the 10-minute all-map run uses 120 seconds). Set
 `map_overlay_after_training` to `false` to generate videos manually. Rendering runs
 in a separate process after training and does not count against the training time
@@ -99,3 +100,24 @@ level into an SDL target texture and preserves the full target's clipping bounds
 when drawing flag sprites. No physics steps, teleports, or policy recordings are
 used to make a plate. Assets derive from the GPL-2.0-only vendored classic game;
 see `gravity-lab/classic/LICENSE.md` and `GRAVITY_LAB_CHANGES.md` for attribution.
+
+
+## Training results plot
+
+Every completed run also generates `progress.png` and a scalable `progress.svg`,
+independently of whether video generation is enabled. The plot shows fixed full-start
+evaluation finishes and mean progress, rolling training reward and peak progress,
+map coverage over time, and completed episodes per map. Full-start training and
+obstacle-practice suffixes are displayed separately. When a stored equal-time baseline
+evaluation is present, it appears as a reference line on the evaluation panels.
+
+Regenerate a plot without rendering videos:
+
+```sh
+.venv/bin/python scripts/plot_progress.py --run-id RUN_ID
+```
+
+Set `experiment.training_plot_after_training` to `false` to disable automatic plots.
+Plot generation logs and status are in `training_plot_generation.log` and
+`training_plot_status.json`. Older runs without evaluation history show their final
+evaluation where available; the plot does not invent intermediate evaluation points.

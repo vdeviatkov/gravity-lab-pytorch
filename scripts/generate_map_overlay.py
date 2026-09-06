@@ -2,7 +2,7 @@
 """Replay all saved training policies together over complete, reusable game maps.
 
 This visualizes deterministic checkpoint evaluations, not historical exploratory
-training episodes. Defaults to all environments in the run's evaluation protocol.
+training episodes. Defaults to the first map in each level group (three videos).
 Usage: .venv/bin/python scripts/generate_map_overlay.py --run-id ID --tracks 1:2
 """
 from __future__ import annotations
@@ -250,7 +250,7 @@ def main(argv=None) -> int:
     source.add_argument('--run-id')
     source.add_argument('--run-dir', type=Path)
     parser.add_argument('--latest', action='store_true')
-    parser.add_argument('--tracks', help='group:track pairs or all; default run evaluation tracks')
+    parser.add_argument('--tracks', default='0:0,1:0,2:0', help='group:track pairs or all; default first map in each group')
     parser.add_argument('--league', type=int, choices=range(4))
     parser.add_argument('--seed', type=int, default=2000007)
     parser.add_argument('--step-stride', type=int, default=1)
