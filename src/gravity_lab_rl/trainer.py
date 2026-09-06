@@ -25,6 +25,7 @@ from .export import export_checkpoint, load_policy_into_model, policy_from_model
 from .model import DenseQNetwork, select_device
 from .playback import game_repo, require_integration
 from .replay import ReplayBuffer
+from .recording import begin_recording_session, record_environment
 from .reward import EpisodeReward, RewardConfig
 
 
@@ -335,6 +336,7 @@ class Trainer:
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
+        begin_recording_session(self.run_dir, self.config, self.transition_count, self.active_elapsed)
         old_handlers: dict[int, Any] = {}
 
         def handle_signal(signum: int, _frame: Any) -> None:
@@ -359,7 +361,9 @@ class Trainer:
                         configuration["league"], configuration["frame_skip"],
                         configuration["max_episode_steps"], seeds["environment"],
                         configuration.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
-                    return ClassicGravityEnv(classic, configuration.get("level_pack"))
+                    return record_environment(
+                        ClassicGravityEnv(classic, configuration.get("level_pack")),
+                        self.run_dir, configuration, self.config, self.current_active_elapsed)
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name

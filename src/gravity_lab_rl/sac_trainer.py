@@ -25,6 +25,7 @@ from .model import DenseQNetwork, select_device
 from .playback import require_integration
 from .replay import ReplayBuffer
 from .practice import PracticeBank
+from .recording import begin_recording_session, record_environment
 from .reward import EpisodeReward, RewardConfig
 from .trainer import NStepAccumulator, _now, _portable_path, make_metadata
 
@@ -381,6 +382,7 @@ class SACREDQTrainer:
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
+        begin_recording_session(self.run_dir, self.config, self.transition_count, self.active_elapsed)
         old_handlers: dict[int, Any] = {}
 
         def handle_signal(signum: int, _frame: Any) -> None:
@@ -406,7 +408,9 @@ class SACREDQTrainer:
                         configuration["league"], configuration["frame_skip"],
                         configuration["max_episode_steps"], seeds["environment"],
                         configuration.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
-                    return ClassicGravityEnv(classic, configuration.get("level_pack"))
+                    return record_environment(
+                        ClassicGravityEnv(classic, configuration.get("level_pack")),
+                        self.run_dir, configuration, self.config, self.current_active_elapsed)
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name

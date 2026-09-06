@@ -20,6 +20,7 @@ from .evaluation import evaluate_model
 from .export import export_checkpoint, policy_from_model
 from .model import ActorCriticNetwork, select_device
 from .playback import game_repo, require_integration
+from .recording import begin_recording_session, record_environment
 from .reward import EpisodeReward, RewardConfig
 from .trainer import _now, _portable_path, make_metadata
 
@@ -262,6 +263,7 @@ class PPOTrainer:
         rollout_length = int(algo["rollout_length"])
         gamma, gae_lambda = float(algo["gamma"]), float(algo["gae_lambda"])
         metrics_path = self.run_dir / "metrics.jsonl"
+        begin_recording_session(self.run_dir, self.config, self.transition_count, self.active_elapsed)
         old_handlers: dict[int, Any] = {}
 
         def handle_signal(signum: int, _frame: Any) -> None:
@@ -286,7 +288,9 @@ class PPOTrainer:
                         configuration["league"], configuration["frame_skip"],
                         configuration["max_episode_steps"], seeds["environment"],
                         configuration.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
-                    return ClassicGravityEnv(classic, configuration.get("level_pack"))
+                    return record_environment(
+                        ClassicGravityEnv(classic, configuration.get("level_pack")),
+                        self.run_dir, configuration, self.config, self.current_active_elapsed)
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name

@@ -14,75 +14,96 @@ cmake --build gravity-lab/build-classic-rl -j 4
 .venv/bin/python scripts/generate_map_plates.py
 ```
 
-Generate checkpoint replays for selected maps in an existing training run:
+## Recorded attempts and automatic finalization
+
+DQN, PPO, and SAC/REDQ save **every actual training attempt on every visited map**
+by default. At the training time limit, final evaluation is followed automatically
+by a results plot and three videos: the first map in each group (`0:0,1:0,2:0`).
+Only maps with recorded attempts produce a video. Training remains headless; PNG
+capture and video encoding run afterward and do not consume the training budget.
+
+Each video shows attempts 1–20 together, then 21–40, and so on, in recorded order.
+Every environment step is replayed with its original action and reset seed. The
+full map and complete paths remain visible; bikes stay at their final position
+until the batch ends. The final batch can contain fewer than 20 bikes. Attempts
+interrupted by stopping or evaluation are included and labeled partial. Practice
+reconstruction actions are included and their prefix length is labeled separately.
+These recordings cover training rollouts, not separate evaluation episodes.
+
+One command regenerates both the plot and videos without starting training:
 
 ```sh
-.venv/bin/python scripts/generate_map_overlay.py \
-  --run-id sac_redq_finishbonus_only_20260906_021909 --tracks 1:2
+.venv/bin/python scripts/finalize_training.py --run-id RUN_ID
+# All recorded maps, still one video per map:
+.venv/bin/python scripts/finalize_training.py --run-id RUN_ID --tracks all
+# Specific maps:
+.venv/bin/python scripts/finalize_training.py --run-id RUN_ID --tracks 0:0,1:2
 ```
 
-Omit `--tracks` to render the first map in each level group: `0:0,1:0,2:0`
-(three videos). `--tracks all` explicitly selects all 30 maps.
-Use `--league N` to override bike league. Nonmatching group/league pairs get a
-`_leagueN` suffix so their outputs do not overwrite each other. `--run-dir PATH`
-accepts a run outside the standard artifacts directory.
+User-stopped runs skip expensive final rendering unless `map_overlay_on_stop` is
+explicitly true. Their recordings are retained, so the same command works later.
+The stopped historical run can still produce a plot and checkpoint replays, but
+its unrecorded exploratory actions cannot be recovered. If an old run is resumed,
+only subsequent training is recorded; `recording_sessions.jsonl` and the video
+manifest disclose whether recording was enabled from the beginning.
 
-Every `timelapse/t_*.gdp` policy, `final.gdp`, and (when different) `best.gdp` is
-replayed from reset to its terminal
-frame. Each attempt has a color and numbered legend; complete paths stay visible,
-and finished/crashed bikes stay at their last position. The camera shows the whole
-map and expands when a bike moves beyond its bounds. The simulation uses the run's
-frame skip, episode limit, league, and custom level pack. Custom-pack plates are
-stored inside the run instead of replacing the built-in assets.
+For video-only generation or advanced playback settings:
 
-The default records every environment step at real-time playback speed. Two maps
-render concurrently in independent native processes; use `--jobs 1` to serialize
-rendering or another positive value to change concurrency. Each encoder uses two
-threads. Automatic post-training batches use up to four jobs, configurable with
-`experiment.map_overlay_jobs`. A successful batch writes `map_overlay_manifest.json`. Optional
-`--speedup 3` speeds playback up; `--step-stride 2` reduces the animation's temporal
-resolution; `--trail-length 60` shows only the latest 60 environment steps instead
-of the entire path. `--keep-frames` retains raw captures for inspection.
+```sh
+.venv/bin/python scripts/generate_map_overlay.py --run-id RUN_ID --tracks all
+```
 
-Outputs are `map_overlay_lgG_tT.mp4` and a JSON sidecar listing each policy, its
-training timestamp, outcome, and rendering settings. PNG frames are streamed to
-FFmpeg as raw RGB, avoiding a second large sequence of intermediate images. A
-failed recording fails the job instead of silently omitting a policy. Existing
-videos are replaced only after encoding succeeds.
+`--source training` requires actual action recordings. The default `--source auto`
+uses these when present and otherwise generates clearly labeled legacy checkpoint
+replays. `--source checkpoints` explicitly replays saved policies instead. Legacy
+replays include every `timelapse/t_*.gdp`, `final.gdp`, and distinct `best.gdp`.
+They are deterministic evaluations, not historical training attempts.
 
-## Automatic generation after training
-
-For DQN, PPO, and SAC/REDQ, every run automatically generates a results plot and
-three videos (`0:0,1:0,2:0`) after final evaluation when training reaches its time budget. User-stopped
-runs skip rendering unless `experiment.map_overlay_on_stop` is explicitly true. Missing settings default to
-`map_overlay_after_training: true`, `map_overlay_tracks: "0:0,1:0,2:0"`,
-`training_plot_after_training: true`, and a policy
-snapshot every 300 seconds. New runs also save
-the initial policy, and resumed runs save their starting policy. The final policy
-is always included, even if training ends before the next snapshot interval.
-
-Optional experiment settings:
+Optional experiment settings (these are the defaults):
 
 ```json
 {
-  "timelapse_interval_seconds": 300,
+  "record_training_episodes": true,
   "map_overlay_after_training": true,
-  "map_overlay_tracks": "0:0,1:2"
+  "map_overlay_tracks": "0:0,1:0,2:0",
+  "map_overlay_batch_size": 20,
+  "training_plot_after_training": true
 }
 ```
 
-Omit `map_overlay_tracks` to generate the three default videos. Set it to `"all"`
-for all 30, or a list such as `"0:0,1:2"` for specific maps. Set `timelapse_interval_seconds` to a shorter
-interval for more snapshots (the 10-minute all-map run uses 120 seconds). Set
-`map_overlay_after_training` to `false` to generate videos manually. Rendering runs
-in a separate process after training and does not count against the training time
-budget. Progress is logged to `map_overlay_generation.log`; completion or failure
-is recorded in `map_overlay_status.json`. A rendering failure preserves all saved
-training results.
+Set `map_overlay_tracks` to `"all"` for every map. Set `map_overlay_after_training`
+to false for manual rendering while retaining recordings. The standalone finalizer
+explicitly enables plots and videos for its invocation. `--batch-size` overrides
+20; `--run-dir PATH` accepts a run outside `artifacts/`.
 
-These videos show deterministic evaluations of saved policies. They are not a
-recording of the exploratory actions taken during training. Historical episodes
-cannot be reconstructed from policy snapshots alone.
+`training_episodes/` stores each attempt's configuration, seed, start time, outcome,
+and one-byte-per-action file. Actions are written after each successful step without
+userspace buffering. A process crash leaves a replayable incomplete prefix. Resumes
+create unique files without overwriting earlier attempts. Disk/power failures are
+not protected by per-step fsync. Keep the same native physics build and custom level
+pack for faithful replay. No trained network inference is needed for action replay.
+
+Outputs are `map_overlay_lgG_tT.mp4`, JSON sidecars listing every attempt and batch
+size, and `map_overlay_manifest.json`. Different bike leagues get a `_leagueN`
+suffix. Each batch uses the full game-rendered map and expands to contain off-map
+movements, then fits into a shared output size without cropping. Native captures
+are removed after each batch, bounding temporary image storage. Batches are joined
+into one MP4 without another encoding pass; existing videos are replaced only
+when the complete map succeeds.
+
+Manual rendering uses two independent map processes by default (`--jobs N`).
+Automatic rendering uses up to four, configurable with `map_overlay_jobs`. Each
+encoder uses two threads. `--speedup 3` speeds playback without dropping steps;
+`--trail-length 60` shortens paths, and `--keep-frames` retains captures. Actual
+training videos require `--step-stride 1` to retain every recorded movement.
+`--league N` filters recorded attempts by their original league; legacy policy
+replays instead use it as an override.
+
+Progress and failures are reported in `map_overlay_generation.log` and
+`map_overlay_status.json`. A render failure preserves training results and action
+recordings. The finalizer exits unsuccessfully if either plot or video generation
+fails. The native viewer accepts `--actions FILE --episodes 1` for direct action
+replay using the original group, track, league, frame skip, episode limit, and seed.
 
 ## Coordinates and assets
 

@@ -70,6 +70,8 @@ class PracticeBank:
             peak = max(peak, observation[0])
         if observation != tuple(saved['observation']):
             raise RuntimeError('practice state reconstruction mismatch')
+        if hasattr(env, "mark_practice_prefix"):
+            env.mark_practice_prefix(len(saved["actions"]))
         self.restored_episodes += 1
         self.reconstructed_steps += len(saved['actions'])
         return PracticeStart(observation, saved['seed'], list(saved['actions']), peak)

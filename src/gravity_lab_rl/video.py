@@ -1,4 +1,4 @@
-"""Post-training checkpoint replay videos; rendering stays outside the training loop."""
+"""Post-training actual-attempt videos; rendering stays outside the training loop."""
 from __future__ import annotations
 
 import json
@@ -18,12 +18,14 @@ def generate_training_videos(run_dir: Path, config: dict) -> None:
     command = [sys.executable, str(script), '--run-dir', str(run_dir.resolve()),
                '--seed', str(config['seeds']['final_evaluation']),
                '--jobs', str(experiment.get('map_overlay_jobs', min(4, os.cpu_count() or 1)))]
+    command += ['--source', experiment.get('map_overlay_source', 'auto')]
+    command += ['--batch-size', str(experiment.get('map_overlay_batch_size', 20))]
     tracks = experiment.get('map_overlay_tracks', '0:0,1:0,2:0')
     if tracks:
         command += ['--tracks', tracks]
     log_path = run_dir / 'map_overlay_generation.log'
     status_path = run_dir / 'map_overlay_status.json'
-    print(f'Generating checkpoint replay videos; log: {log_path}', flush=True)
+    print(f'Generating training videos; log: {log_path}', flush=True)
     status = {'status': 'running', 'log': str(log_path), 'command': command}
     status_path.write_text(json.dumps(status, indent=2) + '\n')
     try:
@@ -34,7 +36,7 @@ def generate_training_videos(run_dir: Path, config: dict) -> None:
         print(f'Video generation failed; training results are saved. See {log_path}', file=sys.stderr)
     else:
         status.update(status='complete', videos=[str(p) for p in sorted(run_dir.glob('map_overlay_*.mp4'))])
-        print(f'Checkpoint replay videos saved in {run_dir}', flush=True)
+        print(f'Training videos saved in {run_dir}', flush=True)
     finally:
         status_path.write_text(json.dumps(status, indent=2) + '\n')
 

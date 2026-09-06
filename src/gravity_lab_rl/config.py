@@ -38,6 +38,8 @@ def with_experiment_defaults(config: dict[str, Any]) -> dict[str, Any]:
     """Enable three representative map videos and a training plot unless disabled."""
     result = copy.deepcopy(config)
     experiment = result['experiment']
+    experiment.setdefault('record_training_episodes', True)
+    experiment.setdefault('map_overlay_batch_size', 20)
     experiment.setdefault('map_overlay_after_training', True)
     experiment.setdefault('map_overlay_tracks', '0:0,1:0,2:0')
     experiment.setdefault('training_plot_after_training', True)
