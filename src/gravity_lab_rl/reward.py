@@ -32,6 +32,7 @@ class RewardConfig:
     # For idling-forever to discount worse than one crash: idle_penalty / (1 - gamma) >
     # crash_penalty, i.e. idle_penalty > crash_penalty * (1 - gamma) = 5.0 * 0.01 = 0.05
     # (gamma=0.99 in every shipped config). Default keeps a 2x margin.
+    idle_grace_steps: int = 0
     idle_penalty: float = 0.1
     progress_percent_bonus: float = 0.1  # per 1% of new peak progress advanced this step
     # The per-percent bonus scales up with how far along the track progress already is (1x at the
@@ -65,6 +66,9 @@ def validate_reward_config(config: dict[str, Any]) -> None:
     reward = config.get("reward", {})
     if not isinstance(reward, dict):
         raise ValueError("reward must be an object")
+    grace = reward.get('idle_grace_steps', 0)
+    if not isinstance(grace, int) or grace < 0:
+        raise ValueError('reward.idle_grace_steps must be a nonnegative integer')
     known = set(RewardConfig.__dataclass_fields__)
     unknown = set(reward) - known
     if unknown:
@@ -103,3 +107,18 @@ def step_reward(reward_config: RewardConfig, peak_progress: float, current_progr
     if crashed:
         reward -= reward_config.crash_penalty
     return reward, new_peak
+
+
+class EpisodeReward:
+    """Episode-local grace period for setup maneuvers; defaults preserve old rewards."""
+    def __init__(self, config: RewardConfig, progress: float):
+        self.config = config
+        self.peak_progress = progress
+        self.stagnant_steps = 0
+
+    def step(self, progress: float, finished: bool, crashed: bool) -> tuple[float, float]:
+        self.stagnant_steps = self.stagnant_steps + 1 if progress <= self.peak_progress else 0
+        reward, self.peak_progress = step_reward(self.config, self.peak_progress, progress, finished, crashed)
+        if 0 < self.stagnant_steps <= self.config.idle_grace_steps:
+            reward += self.config.idle_penalty
+        return reward, self.peak_progress

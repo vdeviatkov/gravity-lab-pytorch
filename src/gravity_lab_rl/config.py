@@ -138,6 +138,18 @@ def validate_config(config: dict[str, Any]) -> None:
         threshold = curriculum.get("stage_advance_finish_rate", 0.5)
         if not 0.0 <= float(threshold) <= 1.0:
             raise ValueError("curriculum stage_advance_finish_rate must be in [0, 1]")
+    if curriculum and float(curriculum.get('focus_weight', 1.0)) <= 0:
+        raise ValueError('curriculum focus_weight must be positive')
+    practice = config.get('practice', {})
+    if practice.get('enabled', False):
+        if kind != 'sac_redq':
+            raise ValueError('obstacle practice currently requires sac_redq')
+        if not 0 <= float(practice.get('probability', .5)) < 1:
+            raise ValueError('practice probability must be in [0, 1) to retain full-start episodes')
+        if int(practice.get('checkpoint_stride', 25)) < 1:
+            raise ValueError('practice checkpoint_stride must be positive')
+    if curriculum and (curriculum.get('unlock_all') or curriculum.get('guaranteed_coverage')) and kind != 'sac_redq':
+        raise ValueError('all-map coverage scheduler currently requires sac_redq')
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")

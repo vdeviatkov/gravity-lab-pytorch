@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from concurrent.futures import ThreadPoolExecutor
 import json
 import math
 import os
@@ -40,6 +41,11 @@ def checkpoint_files(run_dir: Path) -> list[tuple[int, Path]]:
         elapsed = int(summary.get('active_training_duration_seconds',
                                   snapshots[-1][0] + 1 if snapshots else 0))
         snapshots.append((elapsed, final))
+    best = run_dir / 'best.gdp'
+    if best.is_file() and (not final.is_file() or best.read_bytes() != final.read_bytes()):
+        summary_path = run_dir / 'summary.json'
+        summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+        snapshots.append((int(summary.get('best_policy_active_training_seconds', 0)), best))
     if not snapshots:
         raise ValueError(f'No timelapse snapshots or final.gdp found in {run_dir}')
     return snapshots
@@ -165,7 +171,7 @@ def generate_video(run_dir, env, checkpoints, args):
         for i, ((elapsed, policy), color) in enumerate(zip(checkpoints, colors)):
             x, y = 18 + (i % columns) * 280, 64 + (i // columns) * 26
             d.rectangle((x, y + 3, x + 14, y + 17), fill=color)
-            suffix = ' (final)' if policy.name == 'final.gdp' else ''
+            suffix = {'final.gdp': ' (final)', 'best.gdp': ' (best)'}.get(policy.name, '')
             d.text((x + 22, y), f'{i + 1}: train {elapsed}s{suffix}', font=small, fill='black')
         def point(row):
             x, y = bike_canvas_pos(row[1], row[2], min_ox, min_oy)
@@ -181,7 +187,7 @@ def generate_video(run_dir, env, checkpoints, args):
         command = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pixel_format', 'rgb24',
                    '-video_size', f'{canvas.width}x{canvas.height}', '-framerate', str(fps),
                    '-i', '-', '-an', '-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast',
-                   '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(temporary_output)]
+                   '-threads', '2', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(temporary_output)]
         encoder_log = work / 'ffmpeg.log'
         with encoder_log.open('wb') as log:
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=log)
@@ -251,8 +257,9 @@ def main(argv=None) -> int:
     parser.add_argument('--speedup', type=float, default=1.0)
     parser.add_argument('--trail-length', type=int, default=0, help='0 keeps complete paths (default)')
     parser.add_argument('--keep-frames', action='store_true')
+    parser.add_argument('--jobs', type=int, default=2, help='independent map render jobs (default 2)')
     args = parser.parse_args(argv)
-    if args.step_stride < 1 or not math.isfinite(args.speedup) or args.speedup <= 0 or args.trail_length < 0:
+    if args.jobs < 1 or args.step_stride < 1 or not math.isfinite(args.speedup) or args.speedup <= 0 or args.trail_length < 0:
         parser.error('step-stride/speedup must be positive and trail-length nonnegative')
     if not VIEWER.exists() or not shutil.which('ffmpeg'):
         parser.error('build the classic viewer and install ffmpeg first')
@@ -261,8 +268,20 @@ def main(argv=None) -> int:
     checkpoints = checkpoint_files(run_dir)
     envs = selected_environments(config, parse_tracks(args.tracks) if args.tracks else None, args.league)
     print(f'{len(checkpoints)} policies, {len(envs)} maps', flush=True)
+    # Prepare shared plates and matplotlib before threads; the actual native
+    # environments always run in separate viewer subprocesses.
+    import matplotlib
     for env in envs:
-        generate_video(run_dir, env, checkpoints, args)
+        pack = env.get('level_pack')
+        directory = run_dir / 'map_plates' if pack else PLATES_DIR
+        load_plate(env['level_group'], env['track'], directory, pack)
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        outputs = list(pool.map(lambda env: generate_video(run_dir, env, checkpoints, args), envs))
+    (run_dir / 'map_overlay_manifest.json').write_text(json.dumps({
+        'format': 'gravity-lab-map-overlay-manifest-v1',
+        'videos': [str(path.relative_to(run_dir)) for path in outputs],
+        'map_count': len(outputs), 'policy_count': len(checkpoints),
+    }, indent=2) + '\n')
     return 0
 
 

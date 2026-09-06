@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -13,7 +14,8 @@ def generate_training_videos(run_dir: Path, config: dict) -> None:
         return
     script = Path(__file__).resolve().parents[2] / 'scripts' / 'generate_map_overlay.py'
     command = [sys.executable, str(script), '--run-dir', str(run_dir.resolve()),
-               '--seed', str(config['seeds']['final_evaluation'])]
+               '--seed', str(config['seeds']['final_evaluation']),
+               '--jobs', str(experiment.get('map_overlay_jobs', min(4, os.cpu_count() or 1)))]
     tracks = experiment.get('map_overlay_tracks', 'all')
     if tracks:
         command += ['--tracks', tracks]

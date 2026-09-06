@@ -8,7 +8,7 @@ import torch
 from . import DEFAULT_OBSTACLE_RAY_COUNT
 from .config import curriculum_environments
 from .model import DenseQNetwork
-from .reward import RewardConfig, step_reward
+from .reward import EpisodeReward, RewardConfig
 
 
 def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int | None = None,
@@ -41,6 +41,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
                 observation = env.reset(episode_seed)[:observation_size]
                 reward_total = 0.0
                 peak_progress = observation[0]
+                reward_tracker = EpisodeReward(reward_config, peak_progress)
                 last = None
                 for length in range(1, env_cfg["max_episode_steps"] + 1):
                     with torch.inference_mode():
@@ -48,8 +49,7 @@ def evaluate_model(model: DenseQNetwork, config: dict[str, Any], episodes: int |
                                                       device=device))
                         action = int(torch.argmax(q_values).item())
                     last = env.step(action)
-                    reward, peak_progress = step_reward(reward_config, peak_progress, last.observation[0],
-                                                        last.finished, last.crashed)
+                    reward, peak_progress = reward_tracker.step(last.observation[0], last.finished, last.crashed)
                     reward_total += reward
                     observation = last.observation[:observation_size]
                     if last.terminated or last.truncated:

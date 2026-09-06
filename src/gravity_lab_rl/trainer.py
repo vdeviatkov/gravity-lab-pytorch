@@ -25,7 +25,7 @@ from .export import export_checkpoint, load_policy_into_model, policy_from_model
 from .model import DenseQNetwork, select_device
 from .playback import game_repo, require_integration
 from .replay import ReplayBuffer
-from .reward import RewardConfig, step_reward
+from .reward import EpisodeReward, RewardConfig
 
 
 def _now() -> str:
@@ -371,6 +371,7 @@ class Trainer:
                     :self.observation_size]
                 reward_config = RewardConfig.from_config(self.config)
                 peak_progress = observation[0]
+                reward_tracker = EpisodeReward(reward_config, peak_progress)
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 n_step = NStepAccumulator(int(algo.get("n_step", 1)), algo["gamma"])
                 while self.current_active_elapsed() < duration and not self._stop_signal:
@@ -386,8 +387,7 @@ class Trainer:
                             action = int(torch.argmax(values).item())
                     step = env.step(action)
                     next_observation = step.observation[:self.observation_size]
-                    reward, peak_progress = step_reward(reward_config, peak_progress, step.observation[0],
-                                                        step.finished, step.crashed)
+                    reward, peak_progress = reward_tracker.step(step.observation[0], step.finished, step.crashed)
                     for ready in n_step.push(observation, action, reward, next_observation,
                                              step.terminated, step.truncated):
                         self.replay.add(*ready, track_id=track_id)
@@ -427,6 +427,7 @@ class Trainer:
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                             :self.observation_size]
                         peak_progress = observation[0]
+                        reward_tracker = EpisodeReward(reward_config, peak_progress)
                         episode_reward, episode_length = 0.0, 0
                     now = time.monotonic()
                     if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
@@ -486,6 +487,7 @@ class Trainer:
                         observation = env.reset(seeds["environment"] + self.completed_episode_count)[
                             :self.observation_size]
                         peak_progress = observation[0]
+                        reward_tracker = EpisodeReward(reward_config, peak_progress)
                         episode_reward, episode_length = 0.0, 0
                         # This abandons the in-progress episode without a terminal/truncated
                         # signal, so any partial n-step window from it must be discarded, not
@@ -561,5 +563,6 @@ class Trainer:
         self.save(final=True)
         self._status("stopped", self.run_dir / "final.pt")
         from .video import generate_training_videos
-        generate_training_videos(self.run_dir, self.config)
+        if graceful_reason == 'duration-expired' or self.config['experiment'].get('map_overlay_on_stop', False):
+            generate_training_videos(self.run_dir, self.config)
         return summary

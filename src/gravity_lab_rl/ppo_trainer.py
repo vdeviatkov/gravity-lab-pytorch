@@ -20,7 +20,7 @@ from .evaluation import evaluate_model
 from .export import export_checkpoint, policy_from_model
 from .model import ActorCriticNetwork, select_device
 from .playback import game_repo, require_integration
-from .reward import RewardConfig, step_reward
+from .reward import EpisodeReward, RewardConfig
 from .trainer import _now, _portable_path, make_metadata
 
 
@@ -294,6 +294,7 @@ class PPOTrainer:
                     :self.observation_size]
                 reward_config = RewardConfig.from_config(self.config)
                 peak_progress = observation[0]
+                reward_tracker = EpisodeReward(reward_config, peak_progress)
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 stop_early = False
 
@@ -316,8 +317,7 @@ class PPOTrainer:
                             action = distribution.sample()
                             log_prob = distribution.log_prob(action)
                         step = env.step(int(action.item()))
-                        reward, peak_progress = step_reward(reward_config, peak_progress, step.observation[0],
-                                                            step.finished, step.crashed)
+                        reward, peak_progress = reward_tracker.step(step.observation[0], step.finished, step.crashed)
                         observations.append(observation)
                         actions.append(int(action.item()))
                         log_probs.append(float(log_prob.item()))
@@ -362,6 +362,7 @@ class PPOTrainer:
                                 seeds["environment"] + self.completed_episode_count)[
                                 :self.observation_size]
                             peak_progress = observation[0]
+                            reward_tracker = EpisodeReward(reward_config, peak_progress)
                             episode_reward, episode_length = 0.0, 0
                         now = time.monotonic()
                         if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
@@ -421,6 +422,7 @@ class PPOTrainer:
                                 seeds["environment"] + self.completed_episode_count)[
                                 :self.observation_size]
                             peak_progress = observation[0]
+                            reward_tracker = EpisodeReward(reward_config, peak_progress)
                             episode_reward, episode_length = 0.0, 0
                         if self.current_active_elapsed() >= duration:
                             break
@@ -512,5 +514,6 @@ class PPOTrainer:
                               "final_evaluation": evaluation})
         atomic_write_json(self.run_dir / "metadata.json", self.metadata)
         from .video import generate_training_videos
-        generate_training_videos(self.run_dir, self.config)
+        if graceful_reason == 'duration-expired' or self.config['experiment'].get('map_overlay_on_stop', False):
+            generate_training_videos(self.run_dir, self.config)
         return summary

@@ -27,14 +27,19 @@ Use `--league N` to override bike league. Nonmatching group/league pairs get a
 `_leagueN` suffix so their outputs do not overwrite each other. `--run-dir PATH`
 accepts a run outside the standard artifacts directory.
 
-Every `timelapse/t_*.gdp` policy and `final.gdp` is replayed from reset to its terminal
+Every `timelapse/t_*.gdp` policy, `final.gdp`, and (when different) `best.gdp` is
+replayed from reset to its terminal
 frame. Each attempt has a color and numbered legend; complete paths stay visible,
 and finished/crashed bikes stay at their last position. The camera shows the whole
 map and expands when a bike moves beyond its bounds. The simulation uses the run's
 frame skip, episode limit, league, and custom level pack. Custom-pack plates are
 stored inside the run instead of replacing the built-in assets.
 
-The default records every environment step at real-time playback speed. Optional
+The default records every environment step at real-time playback speed. Two maps
+render concurrently in independent native processes; use `--jobs 1` to serialize
+rendering or another positive value to change concurrency. Each encoder uses two
+threads. Automatic post-training batches use up to four jobs, configurable with
+`experiment.map_overlay_jobs`. A successful batch writes `map_overlay_manifest.json`. Optional
 `--speedup 3` speeds playback up; `--step-stride 2` reduces the animation's temporal
 resolution; `--trail-length 60` shows only the latest 60 environment steps instead
 of the entire path. `--keep-frames` retains raw captures for inspection.
@@ -48,7 +53,8 @@ videos are replaced only after encoding succeeds.
 ## Automatic generation after training
 
 For DQN, PPO, and SAC/REDQ, every run automatically generates videos for all 30
-maps after final evaluation. Missing settings default to
+maps after final evaluation when training reaches its time budget. User-stopped
+runs skip rendering unless `experiment.map_overlay_on_stop` is explicitly true. Missing settings default to
 `map_overlay_after_training: true`, `map_overlay_tracks: "all"`, and a policy
 snapshot every 300 seconds. New runs also save
 the initial policy, and resumed runs save their starting policy. The final policy

@@ -24,7 +24,8 @@ from .export import export_checkpoint, policy_from_model
 from .model import DenseQNetwork, select_device
 from .playback import require_integration
 from .replay import ReplayBuffer
-from .reward import RewardConfig, step_reward
+from .practice import PracticeBank
+from .reward import EpisodeReward, RewardConfig
 from .trainer import NStepAccumulator, _now, _portable_path, make_metadata
 
 
@@ -104,7 +105,12 @@ class SACREDQTrainer:
         self.best_metrics: dict[str, Any] | None = None
         self._last_best_eval_active = 0.0
         # Progressive difficulty gating -- see Trainer.unlocked_stages.
-        self.unlocked_stages = 1
+        curriculum = config.get('curriculum', {})
+        self.unlocked_stages = len(curriculum.get('stages', [None])) if curriculum.get('unlock_all', False) else 1
+        self.track_episode_counts: dict[int, int] = {}
+        self.track_full_start_counts: dict[int, int] = {}
+        self.best_elapsed = 0.0
+        self.practice = PracticeBank(config.get('practice', {}), seeds.get('obstacle_practice', 23))
         # Adaptive curriculum: track selection weighted toward whatever tracks currently have the
         # lowest recent success rate, instead of plain round-robin -- ported from PPOTrainer (see
         # docs/training-runs.md, "sparse-success plateau" and "Adaptive curriculum + peak-based
@@ -159,7 +165,13 @@ class SACREDQTrainer:
         self.metadata["resumed_from"] = _portable_path(path)
         self._last_checkpoint_active = self.active_elapsed
         self._last_best_eval_active = float(saved.get("last_best_eval_active", self.active_elapsed))
-        self.unlocked_stages = int(saved.get("unlocked_stages", 1))
+        if not self.config.get('curriculum', {}).get('unlock_all', False):
+            self.unlocked_stages = int(saved.get("unlocked_stages", 1))
+        self.track_episode_counts = saved.get('track_episode_counts', {})
+        self.track_full_start_counts = saved.get('track_full_start_counts', {})
+        self.best_elapsed = saved.get('best_elapsed', 0.0)
+        if 'practice_bank' in saved:
+            self.practice.load_state_dict(saved['practice_bank'])
         self.track_success_ema = saved.get("track_success_ema", {})
         if "curriculum_rng_state" in saved:
             self.curriculum_rng.setstate(saved["curriculum_rng_state"])
@@ -190,12 +202,33 @@ class SACREDQTrainer:
         # observed to actively degrade live training quality in run #21's second half, not just
         # plateau. The higher floor keeps real priority for struggling tracks while guaranteeing
         # mastered ones a much larger residual share.
+        # Alternate coverage turns with focused turns. Coverage turns choose
+        # least-visited maps, guaranteeing access instead of relying on chance.
+        if self.config.get('curriculum', {}).get('guaranteed_coverage', False):
+            if self.completed_episode_count % 2 == 0:
+                return min(environments, key=lambda env: self.track_full_start_counts.get(self._track_id(env), 0))
         weights = [1.0 / (self.track_success_ema.get(self._track_id(env), 0.5) + 0.15)
                   for env in environments]
+        focus = set(self.config.get('curriculum', {}).get('focus_tracks', []))
+        boost = float(self.config.get('curriculum', {}).get('focus_weight', 1.0))
+        weights = [weight * (boost if f"{env['level_group']}:{env['track']}" in focus else 1)
+                   for env, weight in zip(environments, weights)]
         return self.curriculum_rng.choices(environments, weights=weights, k=1)[0]
+
+    def _record_evaluation(self, evaluation: dict[str, Any]) -> None:
+        row = {'active_training_seconds': self.current_active_elapsed(),
+               'training_episodes_per_track': self.track_episode_counts,
+               'full_start_episodes_per_track': self.track_full_start_counts,
+               'practice_episodes': self.practice.restored_episodes,
+               'best_finish_rate_before_evaluation': self.best_score[0] if self.best_score else None,
+               'evaluation': evaluation}
+        with (self.run_dir / 'evaluation_history.jsonl').open('a') as stream:
+            stream.write(json.dumps(row, sort_keys=True) + '\n')
 
     def _checkpoint_payload(self) -> dict[str, Any]:
         return {
+            "practice_bank": self.practice.state_dict(),
+            "best_elapsed": self.best_elapsed,
             "online_network": self.actor.state_dict(),
             "critics": [critic.state_dict() for critic in self.critics],
             "critic_targets": [target.state_dict() for target in self.critic_targets],
@@ -207,6 +240,8 @@ class SACREDQTrainer:
             "subset_rng_state": self.subset_rng.bit_generator.state,
             "curriculum_rng_state": self.curriculum_rng.getstate(),
             "track_success_ema": self.track_success_ema,
+            "track_episode_counts": self.track_episode_counts,
+            "track_full_start_counts": self.track_full_start_counts,
             "transition_count": self.transition_count,
             "optimizer_update_count": self.optimizer_update_count,
             "completed_episode_count": self.completed_episode_count,
@@ -243,6 +278,8 @@ class SACREDQTrainer:
             "pid": os.getpid(), "device": str(self.device),
             "environment": self._current_env_cfg,
             "track_success_ema": self.track_success_ema,
+            "track_episode_counts": self.track_episode_counts,
+            "track_full_start_counts": self.track_full_start_counts,
         })
 
     def _pause_if_requested(self) -> bool:
@@ -373,10 +410,13 @@ class SACREDQTrainer:
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name
-                observation = env.reset(seeds["environment"] + self.completed_episode_count)[
-                    :self.observation_size]
+                episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                observation = episode_start.observation[:self.observation_size]
+                episode_actions = list(episode_start.actions)
+                practice_prefix_steps = len(episode_actions)
                 reward_config = RewardConfig.from_config(self.config)
-                peak_progress = observation[0]
+                peak_progress = episode_start.peak_progress
+                reward_tracker = EpisodeReward(reward_config, peak_progress)
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 n_step = NStepAccumulator(int(algo.get("n_step", 1)), algo["gamma"])
                 while self.current_active_elapsed() < duration and not self._stop_signal:
@@ -387,9 +427,10 @@ class SACREDQTrainer:
                                                          device=self.device))
                         action = int(torch.distributions.Categorical(logits=logits).sample().item())
                     step = env.step(action)
+                    episode_actions.append(action)
+                    self.practice.observe(env_cfg, episode_start.seed, episode_actions, step)
                     next_observation = step.observation[:self.observation_size]
-                    reward, peak_progress = step_reward(reward_config, peak_progress, step.observation[0],
-                                                        step.finished, step.crashed)
+                    reward, peak_progress = reward_tracker.step(step.observation[0], step.finished, step.crashed)
                     for ready in n_step.push(observation, action, reward, next_observation,
                                              step.terminated, step.truncated):
                         self.replay.add(*ready, track_id=track_id)
@@ -402,8 +443,13 @@ class SACREDQTrainer:
                         last_loss = self._optimize()
                     if step.terminated or step.truncated:
                         self.completed_episode_count += 1
+                        self.track_episode_counts[track_id] = self.track_episode_counts.get(track_id, 0) + 1
+                        if not practice_prefix_steps:
+                            self.track_full_start_counts[track_id] = self.track_full_start_counts.get(track_id, 0) + 1
                         self.latest_metrics = {
                             "episode": self.completed_episode_count, "reward": episode_reward,
+                            "practice_prefix_steps": practice_prefix_steps,
+                            "peak_progress": peak_progress,
                             "length": episode_length, "progress": float(step.observation[0]),
                             "finished": step.finished, "crashed": step.crashed,
                             "truncated": step.truncated,
@@ -417,7 +463,8 @@ class SACREDQTrainer:
                         }
                         metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
                         metrics_stream.flush()
-                        self._update_track_success(env_cfg, step.finished)
+                        if not practice_prefix_steps:
+                            self._update_track_success(env_cfg, step.finished)
                         self._episodes_since_switch += 1
                         if self._episodes_since_switch >= episodes_per_track:
                             self._episodes_since_switch = 0
@@ -431,9 +478,12 @@ class SACREDQTrainer:
                                 track_id = self._track_id(env_cfg)
                                 env = open_environment(env_cfg)
                                 track_name = env.track_name
-                        observation = env.reset(seeds["environment"] + self.completed_episode_count)[
-                            :self.observation_size]
-                        peak_progress = observation[0]
+                        episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                        observation = episode_start.observation[:self.observation_size]
+                        episode_actions = list(episode_start.actions)
+                        practice_prefix_steps = len(episode_actions)
+                        peak_progress = episode_start.peak_progress
+                        reward_tracker = EpisodeReward(reward_config, peak_progress)
                         episode_reward, episode_length = 0.0, 0
                     now = time.monotonic()
                     if now - self._last_status_wall >= self.config["experiment"]["status_interval_seconds"]:
@@ -463,8 +513,10 @@ class SACREDQTrainer:
                         eval_result = evaluate_model(self.actor, self.config, episodes=eval_episodes,
                                                      device=self.device)
                         self.actor.train()
+                        self._record_evaluation(eval_result)
                         score = (eval_result["finish_rate"], eval_result["mean_progress"])
                         if self.best_score is None or score > self.best_score:
+                            self.best_elapsed = self.current_active_elapsed()
                             self.best_score = score
                             self.best_metrics = eval_result
                             save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
@@ -482,9 +534,12 @@ class SACREDQTrainer:
                                 if stage_finish >= threshold:
                                     self.unlocked_stages += 1
                         env = open_environment(env_cfg)
-                        observation = env.reset(seeds["environment"] + self.completed_episode_count)[
-                            :self.observation_size]
-                        peak_progress = observation[0]
+                        episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                        observation = episode_start.observation[:self.observation_size]
+                        episode_actions = list(episode_start.actions)
+                        practice_prefix_steps = len(episode_actions)
+                        peak_progress = episode_start.peak_progress
+                        reward_tracker = EpisodeReward(reward_config, peak_progress)
                         episode_reward, episode_length = 0.0, 0
                         n_step.reset()
                 graceful_reason = self._stop_signal or "duration-expired"
@@ -521,8 +576,10 @@ class SACREDQTrainer:
             raise failure
 
         evaluation = evaluate_model(self.actor, self.config, device=self.device)
+        self._record_evaluation(evaluation)
         final_score = (evaluation["finish_rate"], evaluation["mean_progress"])
         if self.best_score is None or final_score > self.best_score:
+            self.best_elapsed = self.active_elapsed
             self.best_score = final_score
             self.best_metrics = evaluation
             save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
@@ -537,6 +594,11 @@ class SACREDQTrainer:
             "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic "
                                         "evaluation; see best_evaluation and paths.best_checkpoint",
             "final_evaluation": evaluation,
+            "best_policy_active_training_seconds": self.best_elapsed,
+            "track_training_episodes": self.track_episode_counts,
+            "track_full_start_episodes": self.track_full_start_counts,
+            "practice_episodes": self.practice.restored_episodes,
+            "practice_reconstructed_steps": self.practice.reconstructed_steps,
             "best_evaluation": self.best_metrics,
             "paths": {"final_checkpoint": _portable_path(self.run_dir / "final.pt"),
                       "final_policy": _portable_path(self.run_dir / "final.gdp"),
@@ -555,5 +617,6 @@ class SACREDQTrainer:
         self.save(final=True)
         self._status("stopped", self.run_dir / "final.pt")
         from .video import generate_training_videos
-        generate_training_videos(self.run_dir, self.config)
+        if graceful_reason == 'duration-expired' or self.config['experiment'].get('map_overlay_on_stop', False):
+            generate_training_videos(self.run_dir, self.config)
         return summary
