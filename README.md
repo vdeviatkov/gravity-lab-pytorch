@@ -4,6 +4,9 @@ PyTorch Double DQN training and graphical policy playback for
 `gravity-lab-classic-v1`. The faithful game and physics are included as the `gravity-lab/` Git
 submodule. A small trained policy is bundled, so AI Arcade works immediately after setup.
 
+Complete map assets and automatic checkpoint replay videos are described in
+[Full-map training videos](docs/map-videos.md).
+
 ## Quick start
 
 Install native dependencies.
