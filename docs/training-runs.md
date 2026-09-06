@@ -932,3 +932,45 @@ policy round-trip, classic environment contract, viewer validate, viewer smoke) 
 reran a live SAC training smoke test end to end (100% finish, mean reward 38.6, consistent with
 every prior run of this exact config) to confirm the trimmed submodule still trains correctly, not
 just that it compiles.
+
+## Timelapse video and progress plot tooling
+
+Two new post-training tools, requested to make a run's outcome visible rather than just numbers in
+this log.
+
+**Periodic policy snapshots** (`src/gravity_lab_rl/{trainer,ppo_trainer,sac_trainer}.py`): a new
+optional `experiment.timelapse_interval_seconds` config field, checked alongside the existing
+best-checkpoint-eval interval in each trainer's main loop. When set, exports the current policy
+(`export.policy_from_model` called directly on the in-memory network -- no full `.pt` checkpoint
+round-trip, so this is cheap enough to run every few minutes without slowing training) to
+`<run_dir>/timelapse/t_<seconds>.gdp` at that cadence. Not persisted across resume (a resume just
+restarts the countdown), since exact interval spacing across a resume boundary doesn't matter for
+this cosmetic feature. Added to `configs/classic_intro_sac.json` (15s, for quick smoke tests) and
+`configs/classic_all_tracks_sac.json` (300s).
+
+**`scripts/generate_timelapse.py`**: reads a run's `timelapse/*.gdp` snapshots in order and, for
+each of 3 (level_group, track) pairs (default one per curriculum stage, override with `--tracks
+0:0,1:0,2:0`-style pairs), plays every snapshot headlessly through the newly-capable
+`gravity_lab_classic_viewer --record-dir` (see the submodule's "Add headless frame capture" commit
+-- `SDL_RenderReadPixels` + `IMG_SavePNG` on the frame the renderer already presented, exposed via
+`Renderer::save_frame`, no vendored-engine changes needed since `Canvas::getCanvasImpl()
+->getRenderer()` was already public), captions each frame with its checkpoint's elapsed time via
+Pillow (ffmpeg's `drawtext` filter isn't available in this machine's `ffmpeg` build -- no
+libfreetype/fontconfig -- so captioning happens in Python instead, before frames ever reach
+ffmpeg), and encodes one continuous video per track spanning every checkpoint in chronological
+order with `ffmpeg -framerate ... -i frame_%07d.png`. Output: `timelapse_lg<N>_t<N>.mp4` per track,
+watchable end to end as the same track played worse-to-better across training.
+
+**`scripts/plot_progress.py`**: reads `metrics.jsonl` (needs no new instrumentation -- every
+trainer already logs one row per completed episode) and produces a two-panel PNG: cumulative
+distinct maps passed vs. active training time (a step function, monotonically non-decreasing --
+directly "how many maps passed after each iteration"), and a rolling finish-rate line (window
+configurable, default 150 episodes) showing the training-time dynamics the monotonic top panel
+hides, the same signal this log's check-ins have been computing by hand from `metrics.jsonl` all
+session.
+
+Both verified end to end, not just that they run: a 60s all-tracks smoke produced a correct
+4-distinct-tracks step plot; a 50s single-track smoke (3 snapshots at t=15/30/45s) produced a valid
+19.5s h264 video, visually confirmed to show real game footage with a correct
+"level 0 track 0  t=0:30  checkpoint 2/3" caption burned in. `matplotlib` and `Pillow` added as the
+`plot` optional dependency group in `pyproject.toml` (Pillow arrives transitively via matplotlib).

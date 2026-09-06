@@ -21,7 +21,7 @@ from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_chec
 from .config import curriculum_environment_index, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import double_dqn_targets, evaluate_model
-from .export import export_checkpoint, load_policy_into_model
+from .export import export_checkpoint, load_policy_into_model, policy_from_model
 from .model import DenseQNetwork, select_device
 from .playback import game_repo, require_integration
 from .replay import ReplayBuffer
@@ -177,6 +177,7 @@ class Trainer:
         self._active_since = time.monotonic()
         self._last_checkpoint_active = 0.0
         self._last_status_wall = 0.0
+        self._last_timelapse_active = 0.0
         # Environment construction, checkpoint I/O, evaluation, and pause time are not active
         # training. The clock starts only when the first training-loop boundary is entered.
         self._paused = True
@@ -428,6 +429,14 @@ class Trainer:
                     if (self.current_active_elapsed() - self._last_checkpoint_active >=
                             self.config["experiment"]["checkpoint_interval_seconds"]):
                         self.save()
+                    timelapse_interval = self.config["experiment"].get("timelapse_interval_seconds")
+                    if (timelapse_interval and self.current_active_elapsed() - self._last_timelapse_active
+                            >= float(timelapse_interval)):
+                        self._last_timelapse_active = self.current_active_elapsed()
+                        timelapse_dir = self.run_dir / "timelapse"
+                        timelapse_dir.mkdir(exist_ok=True)
+                        policy_from_model(self.online).save(
+                            timelapse_dir / f"t_{int(self.current_active_elapsed()):07d}.gdp")
                     best_eval_interval = float(
                         self.config["experiment"].get("best_checkpoint_eval_interval_seconds", 90.0))
                     if self.current_active_elapsed() - self._last_best_eval_active >= best_eval_interval:

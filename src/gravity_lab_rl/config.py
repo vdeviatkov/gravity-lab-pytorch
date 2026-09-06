@@ -130,6 +130,9 @@ def validate_config(config: dict[str, Any]) -> None:
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")
+    timelapse_interval = config["experiment"].get("timelapse_interval_seconds")
+    if timelapse_interval is not None and float(timelapse_interval) <= 0.0:
+        raise ValueError("timelapse_interval_seconds must be positive if set")
     validate_reward_config(config)
 
 
