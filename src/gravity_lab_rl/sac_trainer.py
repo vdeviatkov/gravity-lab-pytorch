@@ -332,6 +332,14 @@ class SACREDQTrainer:
     def run(self) -> dict[str, Any]:
         from gravity_lab import ClassicConfig, ClassicGravityEnv
 
+        # Preserve the initial (or resumed) policy before the first update.
+        if self.config["experiment"].get("timelapse_interval_seconds"):
+            timelapse_dir = self.run_dir / "timelapse"
+            timelapse_dir.mkdir(exist_ok=True)
+            snapshot = timelapse_dir / f"t_{int(self.active_elapsed):07d}.gdp"
+            if not snapshot.exists():
+                policy_from_model(self.actor).save(snapshot)
+
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
@@ -545,4 +553,6 @@ class SACREDQTrainer:
         atomic_write_json(self.run_dir / "metadata.json", self.metadata)
         self.save(final=True)
         self._status("stopped", self.run_dir / "final.pt")
+        from .video import generate_training_videos
+        generate_training_videos(self.run_dir, self.config)
         return summary

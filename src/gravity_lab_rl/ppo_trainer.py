@@ -248,6 +248,14 @@ class PPOTrainer:
     def run(self) -> dict[str, Any]:
         from gravity_lab import ClassicConfig, ClassicGravityEnv
 
+        # Preserve the initial (or resumed) policy before the first update.
+        if self.config["experiment"].get("timelapse_interval_seconds"):
+            timelapse_dir = self.run_dir / "timelapse"
+            timelapse_dir.mkdir(exist_ok=True)
+            snapshot = timelapse_dir / f"t_{int(self.active_elapsed):07d}.gdp"
+            if not snapshot.exists():
+                policy_from_model(self.model).save(snapshot)
+
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         rollout_length = int(algo["rollout_length"])
@@ -502,4 +510,6 @@ class PPOTrainer:
                               "optimizer_update_count": self.optimizer_update_count,
                               "final_evaluation": evaluation})
         atomic_write_json(self.run_dir / "metadata.json", self.metadata)
+        from .video import generate_training_videos
+        generate_training_videos(self.run_dir, self.config)
         return summary

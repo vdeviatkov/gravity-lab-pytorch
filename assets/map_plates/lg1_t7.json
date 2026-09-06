@@ -1,0 +1,11 @@
+{
+  "format": "gravity-lab-map-plate-v2",
+  "min_ox": -649,
+  "min_oy": -214,
+  "width": 1984,
+  "height": 408,
+  "level_group": 1,
+  "track": 7,
+  "level_pack": null,
+  "renderer": "classic fixed perspective; no bike, shadow, or HUD"
+}

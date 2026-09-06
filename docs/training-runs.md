@@ -33,6 +33,7 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 21 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.05) | 134 | `configs/classic_all_tracks_sac.json` | 6,634.15s (~1.84h; manually stopped, curriculum over-concentration identified) | 2.12M | 26.7% (8/30) best / 3.3% (1/30) final, 0/30 stage-1 throughout | 0.414 best / 0.246 final | complete — **stopped**, adaptive curriculum over-concentrated on stage-1 once it tied near 0% success, degrading live training performance without a stage-1 payoff; see "Adaptive curriculum outcome" below | none deployed (did not beat run #20) |
 | 22 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.15) | 134 | `configs/classic_all_tracks_sac.json` | 6,660.29s (~1.85h; manually stopped by user, no further diagnosis pending) | 2.14M | 30.0% (9/30) best / 13.3% (4/30) final, stage 1 3/30-episodes | 0.454 best / 0.424 final | complete — **stopped**, matched run #20's peak (9/30/0.456→0.454) but reached it ~3x faster (t=1614s vs t=5211s) with a healthier stage0/stage1 attention split (~35%/65%, no decline recurrence); plateaued at 9/30 for the remaining ~1.3h with no further breakthrough; see "Rebalanced curriculum outcome" below | `policies/classic_sac_redq_curriculum_v2_interim.gdp` |
 | 23 | SAC + REDQ, run #22 config + `gamma` 0.99→0.9995 + `finish_bonus` 10.0→50.0, all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start, SAC can't warm-start) | 2,247.6s (~37min; fail-fast stopped, clearly regressed vs. run #22 at a comparable point) | ~682.7k | 6.7% (2/30) best, stage 0 never advanced past 5% aggregate finish rate (needs 50%) | 0.284 best | complete — **fail-fast stopped**, see "Gamma/finish-bonus regression (run #23)" below | none deployed |
+| 24 | SAC + REDQ, run #22 config + `finish_bonus` 10.0→50.0 only (`gamma` back at 0.99), all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start) | 1,812.3s (~30min; ran to its full duration target, natural stop) | 570.9k | 26.7% (8/30) best (reached by ~t=1452s) / 16.7% (5/30) final | 0.392 best / 0.405 final (last-150 mean) | complete — see "Isolating finish_bonus from run #23's regression" below | `artifacts/sac_redq_finishbonus_only_20260906_021909/best.gdp` (not promoted, did not beat run #22) |
 
 ## Notes
 
@@ -1014,3 +1015,27 @@ noisy early on. `finish_bonus=50.0` alone (5x run #20-22's terminal reward, unch
 untested in isolation. Reverted `gamma` to 0.99 in both `configs/classic_all_tracks_sac.json` and
 `configs/classic_intro_sac.json`, keeping `finish_bonus=50.0`, to isolate which change was
 responsible before trying any further discount-factor experiments.
+
+## Isolating finish_bonus from run #23's regression (run #24)
+
+With `gamma` back at 0.99 (run #22's value) and `finish_bonus` still at 50.0, launched a fresh
+30-minute run to isolate the two changes bundled into run #23. Early signs looked like a clear win:
+by t=422s it had already reached 6/30 best score with stage 1 unlocked, well ahead of run #22's pace
+(9/30 not reached until t=1614s) — at that point it looked like `finish_bonus` alone might be a
+genuine improvement and `gamma` the sole culprit behind run #23's collapse.
+
+That early lead did not hold to a better final result. The run reached its final best score, 8/30
+(0.392 mean progress), by ~t=1452s — close to, but not past, run #22's ceiling of 9/30 (0.454), and
+with a noticeably lower mean progress at the best checkpoint. Recent finish rate also drifted down
+from 26% (at the t=593s check-in) to 16% by the end of the run's last 150 episodes, without a
+further stage-advance or best-score improvement in between. Ran cleanly to its full 1,812s duration
+with no fail-fast trigger and a healthy ~100% wall-clock/active-time ratio (no stalls).
+
+**Conclusion**: `gamma=0.9995` was the primary driver of run #23's regression, not `finish_bonus`.
+`finish_bonus=50.0` alone is not harmful and appears to accelerate *early* progress (reaching a
+comparable score roughly 100s faster than run #22), but it does not raise the ceiling — the run
+still converged in the same 8-9/30 range that essentially every reward-tuning variant this session
+has plateaued at (runs #20, #22, #24), reinforcing the "Session synthesis" finding that this
+plateau is not sensitive to per-step reward-shaping constants. Not promoted over run #22; no further
+`finish_bonus` variants planned unless combined with a change to the underlying representation or
+algorithm rather than reward scale.
