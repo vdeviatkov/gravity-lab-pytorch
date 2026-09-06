@@ -32,6 +32,7 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 20 | SAC + REDQ, all-tracks + head-clearance sensor + speed-bonus reward | 134 | `configs/classic_all_tracks_sac.json` | 12,513.99s (~3.48h; manually stopped, plateaued) | 3.46M | 30.0% (9/30) best / 20.0% (6/30) final, stage 1 unlocked by first eval | 0.456 best / 0.362 final | complete — **stopped**, best score plateaued at 9/30 from ~t=5211s (~85 min in) through the rest of the run (~2.9h with no improvement); see "Speed bonus reward term" outcome below | `policies/classic_sac_redq_headclear_speedbonus_interim.gdp` (interim) |
 | 21 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.05) | 134 | `configs/classic_all_tracks_sac.json` | 6,634.15s (~1.84h; manually stopped, curriculum over-concentration identified) | 2.12M | 26.7% (8/30) best / 3.3% (1/30) final, 0/30 stage-1 throughout | 0.414 best / 0.246 final | complete — **stopped**, adaptive curriculum over-concentrated on stage-1 once it tied near 0% success, degrading live training performance without a stage-1 payoff; see "Adaptive curriculum outcome" below | none deployed (did not beat run #20) |
 | 22 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.15) | 134 | `configs/classic_all_tracks_sac.json` | 6,660.29s (~1.85h; manually stopped by user, no further diagnosis pending) | 2.14M | 30.0% (9/30) best / 13.3% (4/30) final, stage 1 3/30-episodes | 0.454 best / 0.424 final | complete — **stopped**, matched run #20's peak (9/30/0.456→0.454) but reached it ~3x faster (t=1614s vs t=5211s) with a healthier stage0/stage1 attention split (~35%/65%, no decline recurrence); plateaued at 9/30 for the remaining ~1.3h with no further breakthrough; see "Rebalanced curriculum outcome" below | `policies/classic_sac_redq_curriculum_v2_interim.gdp` |
+| 23 | SAC + REDQ, run #22 config + `gamma` 0.99→0.9995 + `finish_bonus` 10.0→50.0, all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start, SAC can't warm-start) | 2,247.6s (~37min; fail-fast stopped, clearly regressed vs. run #22 at a comparable point) | ~682.7k | 6.7% (2/30) best, stage 0 never advanced past 5% aggregate finish rate (needs 50%) | 0.284 best | complete — **fail-fast stopped**, see "Gamma/finish-bonus regression (run #23)" below | none deployed |
 
 ## Notes
 
@@ -974,3 +975,42 @@ Both verified end to end, not just that they run: a 60s all-tracks smoke produce
 19.5s h264 video, visually confirmed to show real game footage with a correct
 "level 0 track 0  t=0:30  checkpoint 2/3" caption burned in. `matplotlib` and `Pillow` added as the
 `plot` optional dependency group in `pyproject.toml` (Pillow arrives transitively via matplotlib).
+
+**`progress.png`'s cumulative-maps panel was measuring a different, more lenient metric than the
+"best score" quoted throughout this log**, discovered when run #22's `progress.png` showed "13/20
+final" against a documented best score of 9/30. Both numbers were correct, just answering different
+questions: the panel counted distinct `(level_group, track)` pairs that finished **at least once
+during training rollout** (`metrics.jsonl`, logged every completed episode under SAC's exploration
+noise), not the strict deterministic formal-eval score (ε=0, one shot per track) used everywhere
+else in this document — training-time success is always >= the formal score for the same run, since
+a noisy policy gets many tries per track and only needs to get lucky once to register a training-time
+finish. The "20" was a second, independent source of confusion: `total_tracks` was computed as
+tracks *attempted* in that run's log (20, since stage 2 never unlocked), not the full 30-track
+roster, so "13/20" silently used a smaller denominator than every other percentage in this log.
+Fixed in `scripts/plot_progress.py`: the denominator is now always `TRACK_ID_SIZE` (30), the title
+spells out both the training-time count and how many tracks were attempted, and a new `--best-score`
+flag overlays the formal number as a dashed reference line so the two metrics are never conflated
+again. Re-rendering run #22's plot with `--best-score 9` now correctly shows the noisy curve
+climbing to 13/30 against a 9/30 reference line, rather than implying 13/30 was the real result.
+
+## Gamma/finish-bonus regression (run #23)
+
+Tried increasing `gamma` 0.99→0.9995 (effective horizon ~100→~2,000 steps) and `finish_bonus`
+10.0→50.0 simultaneously on top of run #22's exact setup, on the theory that a longer horizon plus a
+much bigger terminal reward would make distant finishes easier to credit-assign toward. Applied the
+fail-fast gate: run #22 had already reached 9/30 (with stage 2 unlocked) by t=1614s; run #23 was
+checked at t=2201s (37 min active, well past that comparison point) and was still stuck on stage 0
+(10 tracks) with only a 5% aggregate finish rate over its last 200 episodes — nowhere near the 50%
+needed to advance a stage — and a formal best score of just 2/30. Wall-clock/active-time ratio was
+~95%, ruling out an environment stall as the explanation; this was a genuine training regression.
+Stopped via `gravity-lab-rl control stop` (graceful — `final.pt` saved) rather than waiting out the
+full 2h target.
+
+Two variables changed at once, so root cause isn't isolated yet, but the leading hypothesis is
+`gamma=0.9995`: a ~20x longer effective horizon combined with `utd_ratio=1` and a 4-critic REDQ
+ensemble on CPU means far fewer effective gradient updates have propagated credit back from any
+given finish by a comparable wall-clock point, and the value targets have much more room to be
+noisy early on. `finish_bonus=50.0` alone (5x run #20-22's terminal reward, unchanged discount) is
+untested in isolation. Reverted `gamma` to 0.99 in both `configs/classic_all_tracks_sac.json` and
+`configs/classic_intro_sac.json`, keeping `finish_bonus=50.0`, to isolate which change was
+responsible before trying any further discount-factor experiments.
