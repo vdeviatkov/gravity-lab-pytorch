@@ -76,3 +76,23 @@ class MapOverlayTest(unittest.TestCase):
             with patch('gravity_lab_rl.video.subprocess.run', side_effect=OSError('missing ffmpeg')):
                 generate_training_videos(run, cfg)
             self.assertEqual(json.loads((run/'map_overlay_status.json').read_text())['status'], 'failed')
+
+    def test_video_defaults_and_explicit_opt_out(self):
+        from gravity_lab_rl.config import with_experiment_defaults
+        from gravity_lab_rl.video import generate_training_videos
+        source = {'experiment': {}, 'seeds': {'final_evaluation': 12}}
+        cfg = with_experiment_defaults(source)
+        self.assertEqual(source['experiment'], {})
+        self.assertTrue(cfg['experiment']['map_overlay_after_training'])
+        self.assertEqual(cfg['experiment']['map_overlay_tracks'], 'all')
+        self.assertEqual(cfg['experiment']['timelapse_interval_seconds'], 300)
+        with tempfile.TemporaryDirectory() as temp:
+            with patch('gravity_lab_rl.video.subprocess.run') as command:
+                generate_training_videos(Path(temp), source)
+            args = command.call_args.args[0]
+            self.assertEqual(args[args.index('--tracks') + 1], 'all')
+            source['experiment']['map_overlay_after_training'] = False
+            with patch('gravity_lab_rl.video.subprocess.run') as command:
+                generate_training_videos(Path(temp), source)
+            command.assert_not_called()
+        self.assertNotIn('timelapse_interval_seconds', with_experiment_defaults(source)['experiment'])

@@ -47,8 +47,10 @@ videos are replaced only after encoding succeeds.
 
 ## Automatic generation after training
 
-For DQN, PPO, and SAC/REDQ, runs with `experiment.timelapse_interval_seconds`
-enabled automatically generate videos after final evaluation. New runs also save
+For DQN, PPO, and SAC/REDQ, every run automatically generates videos for all 30
+maps after final evaluation. Missing settings default to
+`map_overlay_after_training: true`, `map_overlay_tracks: "all"`, and a policy
+snapshot every 300 seconds. New runs also save
 the initial policy, and resumed runs save their starting policy. The final policy
 is always included, even if training ends before the next snapshot interval.
 
@@ -62,7 +64,9 @@ Optional experiment settings:
 }
 ```
 
-Omit `map_overlay_tracks` to use the complete evaluation protocol. Set
+Omit `map_overlay_tracks` to generate all 30 maps. Set it to a list such as
+`"0:0,1:2"` to limit rendering. Set `timelapse_interval_seconds` to a shorter
+interval for more snapshots (the 10-minute all-map run uses 120 seconds). Set
 `map_overlay_after_training` to `false` to generate videos manually. Rendering runs
 in a separate process after training and does not count against the training time
 budget. Progress is logged to `map_overlay_generation.log`; completion or failure

@@ -48,7 +48,7 @@ fi
 
 if [ ! -d "$ROOT/.venv" ]; then "$PYTHON" -m venv "$ROOT/.venv"; fi
 "$ROOT/.venv/bin/python" -m pip install --upgrade pip setuptools wheel
-"$ROOT/.venv/bin/python" -m pip install -e "$GAME_REPO" -e "$ROOT[test]"
+"$ROOT/.venv/bin/python" -m pip install -e "$GAME_REPO" -e "$ROOT[test,video]"
 
 if [ ! -f "$LIBRARY" ]; then
   echo "Native classic library missing: $LIBRARY" >&2

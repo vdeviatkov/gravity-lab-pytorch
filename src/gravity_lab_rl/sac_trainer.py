@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 from . import ACTION_COUNT, DEFAULT_OBSTACLE_RAY_COUNT, TRACKS_PER_LEVEL_GROUP
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
-from .config import curriculum_environments, model_input_size
+from .config import with_experiment_defaults, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import evaluate_model
 from .export import export_checkpoint, policy_from_model
@@ -57,6 +57,7 @@ class SACREDQTrainer:
         if initial_policy is not None:
             raise ValueError("initial_policy warm-start is not yet supported for sac_redq")
         require_integration(require_viewer=False)
+        config = with_experiment_defaults(config)
         self.config, self.run_dir = config, run_dir
         self.run_dir.mkdir(parents=True, exist_ok=True)
         torch.set_num_threads(int(config["experiment"].get("torch_num_threads", 1)))

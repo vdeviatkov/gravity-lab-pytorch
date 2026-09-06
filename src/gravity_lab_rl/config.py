@@ -34,9 +34,20 @@ def default_config_path() -> Path:
     return Path(__file__).resolve().parents[2] / "configs" / "classic_intro.json"
 
 
+def with_experiment_defaults(config: dict[str, Any]) -> dict[str, Any]:
+    """Enable reusable all-map checkpoint videos unless explicitly disabled."""
+    result = copy.deepcopy(config)
+    experiment = result['experiment']
+    experiment.setdefault('map_overlay_after_training', True)
+    experiment.setdefault('map_overlay_tracks', 'all')
+    if experiment['map_overlay_after_training']:
+        experiment.setdefault('timelapse_interval_seconds', 300)
+    return result
+
+
 def load_config(path: str | Path | None = None) -> dict[str, Any]:
     source = Path(path) if path else default_config_path()
-    config = json.loads(source.read_text(encoding="utf-8"))
+    config = with_experiment_defaults(json.loads(source.read_text(encoding="utf-8")))
     validate_config(config)
     return config
 
@@ -179,7 +190,7 @@ def curriculum_environment_index(config: dict[str, Any], completed_episodes: int
 
 def configured(config: dict[str, Any], *, duration_seconds: float | None = None,
                device: str | None = None) -> dict[str, Any]:
-    result = copy.deepcopy(config)
+    result = with_experiment_defaults(config)
     if duration_seconds is not None:
         if duration_seconds <= 0:
             raise ValueError("duration must be positive")

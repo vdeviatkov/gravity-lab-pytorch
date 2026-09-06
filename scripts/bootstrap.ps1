@@ -108,7 +108,7 @@ if (-not (Test-Path $VenvPython)) {
 }
 & $VenvPython -m pip install --upgrade pip setuptools wheel
 if ($LASTEXITCODE -ne 0) { throw "Could not install Python build tooling." }
-& $VenvPython -m pip install -e $GameRepo -e "${Root}[test]"
+& $VenvPython -m pip install -e $GameRepo -e "${Root}[test,video]"
 if ($LASTEXITCODE -ne 0) { throw "Could not install the Python projects." }
 
 foreach ($Required in @("gravity_lab_classic.dll", "gravity_lab_classic_viewer.exe", "gravity_lab_ai_arcade.exe")) {

@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 from . import DEFAULT_OBSTACLE_RAY_COUNT, TRACKS_PER_LEVEL_GROUP
 from .checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
-from .config import curriculum_environment_index, curriculum_environments, model_input_size
+from .config import with_experiment_defaults, curriculum_environment_index, curriculum_environments, model_input_size
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import double_dqn_targets, evaluate_model
 from .export import export_checkpoint, load_policy_into_model, policy_from_model
@@ -129,6 +129,7 @@ class Trainer:
         if resume_checkpoint is not None and initial_policy is not None:
             raise ValueError("resume_checkpoint and initial_policy are mutually exclusive")
         require_integration(require_viewer=False)
+        config = with_experiment_defaults(config)
         self.config, self.run_dir = config, run_dir
         self.run_dir.mkdir(parents=True, exist_ok=True)
         torch.set_num_threads(int(config["experiment"].get("torch_num_threads", 1)))

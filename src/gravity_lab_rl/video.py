@@ -9,12 +9,12 @@ import sys
 
 def generate_training_videos(run_dir: Path, config: dict) -> None:
     experiment = config['experiment']
-    if not experiment.get('map_overlay_after_training', bool(experiment.get('timelapse_interval_seconds'))):
+    if not experiment.get('map_overlay_after_training', True):
         return
     script = Path(__file__).resolve().parents[2] / 'scripts' / 'generate_map_overlay.py'
     command = [sys.executable, str(script), '--run-dir', str(run_dir.resolve()),
                '--seed', str(config['seeds']['final_evaluation'])]
-    tracks = experiment.get('map_overlay_tracks')
+    tracks = experiment.get('map_overlay_tracks', 'all')
     if tracks:
         command += ['--tracks', tracks]
     log_path = run_dir / 'map_overlay_generation.log'

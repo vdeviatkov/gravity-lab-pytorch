@@ -4,7 +4,8 @@ PyTorch Double DQN training and graphical policy playback for
 `gravity-lab-classic-v1`. The faithful game and physics are included as the `gravity-lab/` Git
 submodule. A small trained policy is bundled, so AI Arcade works immediately after setup.
 
-Complete map assets and automatic checkpoint replay videos are described in
+Training generates checkpoint replay videos for all 30 maps by default.
+Complete map assets, video prerequisites, and opt-out settings are described in
 [Full-map training videos](docs/map-videos.md).
 
 ## Quick start
@@ -13,10 +14,10 @@ Install native dependencies.
 
 ```sh
 # macOS
-brew install cmake pkg-config sdl2 sdl2_image sdl2_ttf
+brew install cmake pkg-config sdl2 sdl2_image sdl2_ttf ffmpeg
 
 # Debian/Ubuntu
-sudo apt install cmake pkg-config build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+sudo apt install cmake pkg-config build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev ffmpeg
 ```
 
 Windows 11 runs natively; WSL is not required. In PowerShell, install Git, clone, and run setup:
