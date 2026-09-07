@@ -282,6 +282,10 @@ def generate_recorded_video(run_dir, env, records, args):
     group, track, league = env['level_group'], env['track'], env['league']
     label = f'lg{group}_t{track}' + (f'_league{league}' if league != group else '')
     selected = [r for r in records if r['environment'] == env]
+    limit = args.max_attempts_per_map
+    if limit is not None and len(selected) > limit:
+        indices = [round(i * (len(selected) - 1) / (limit - 1)) for i in range(limit)]
+        selected = [selected[i] for i in indices]
     if not selected:
         print(f'  [{label}] no recorded attempts; skipped', flush=True)
         return None
@@ -330,6 +334,8 @@ def main(argv=None) -> int:
     parser.add_argument('--tracks', default='0:0,1:0,2:0', help='group:track pairs or all; default first map in each group')
     parser.add_argument('--source', choices=['auto', 'training', 'checkpoints'], default='auto')
     parser.add_argument('--batch-size', type=int, default=20)
+    parser.add_argument('--max-attempts-per-map', type=int,
+                        help='evenly sample at most this many recorded attempts per map')
     parser.add_argument('--league', type=int, choices=range(4))
     parser.add_argument('--seed', type=int, default=2000007)
     parser.add_argument('--step-stride', type=int, default=1)
@@ -338,7 +344,9 @@ def main(argv=None) -> int:
     parser.add_argument('--keep-frames', action='store_true')
     parser.add_argument('--jobs', type=int, default=2, help='independent map render jobs (default 2)')
     args = parser.parse_args(argv)
-    if args.batch_size < 1 or args.jobs < 1 or args.step_stride < 1 or not math.isfinite(args.speedup) or args.speedup <= 0 or args.trail_length < 0:
+    if (args.batch_size < 1 or args.jobs < 1 or args.step_stride < 1
+            or (args.max_attempts_per_map is not None and args.max_attempts_per_map < 1)
+            or not math.isfinite(args.speedup) or args.speedup <= 0 or args.trail_length < 0):
         parser.error('step-stride/speedup must be positive and trail-length nonnegative')
     if not VIEWER.exists() or not FFMPEG.exists():
         parser.error('build the classic viewer and install ffmpeg first')

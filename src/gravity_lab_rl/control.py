@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,10 +24,19 @@ def atomic_write_json(path: str | Path, data: dict[str, Any]) -> None:
 
 
 def read_control(path: str | Path) -> dict[str, Any]:
-    try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return {"requested": "run", "state": "starting"}
+    # atomic_write_json's os.replace can leave the destination transiently locked on Windows
+    # (observed as PermissionError from a concurrent reader); a few short retries ride that out
+    # instead of crashing a long-lived poller like train_watchdog.py.
+    attempts = 5
+    for attempt in range(attempts):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return {"requested": "run", "state": "starting"}
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.05)
 
 
 def initialize_control(path: str | Path, run_id: str) -> None:
