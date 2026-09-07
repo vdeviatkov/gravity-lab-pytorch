@@ -1,11 +1,16 @@
 {
   "format": "gravity-lab-map-overlay-manifest-v1",
   "videos": [
-    "map_overlay_lg0_t0.mp4",
-    "map_overlay_lg1_t0.mp4",
-    "map_overlay_lg2_t0.mp4"
+    "map_overlay_lg2_t3.mp4",
+    "map_overlay_lg2_t7.mp4",
+    "map_overlay_lg2_t9.mp4",
+    "map_overlay_lg2_t6.mp4",
+    "map_overlay_lg2_t4.mp4",
+    "map_overlay_lg2_t0.mp4",
+    "map_overlay_lg2_t5.mp4",
+    "map_overlay_lg2_t8.mp4"
   ],
-  "map_count": 3,
+  "map_count": 8,
   "policy_count": 0,
   "source": "actual training actions",
   "recorded_attempt_count": 5142,

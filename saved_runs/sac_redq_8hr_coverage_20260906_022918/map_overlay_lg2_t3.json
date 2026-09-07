@@ -1,0 +1,2773 @@
+{
+  "format": "gravity-lab-map-overlay-v3",
+  "source": "actual training actions",
+  "environment": {
+    "frame_skip": 2,
+    "league": 2,
+    "level_group": 2,
+    "level_pack": null,
+    "max_episode_steps": 2000,
+    "obstacle_ray_count": 32,
+    "track": 3
+  },
+  "batch_size": 20,
+  "batch_count": 9,
+  "attempt_count": 172,
+  "width": 1862,
+  "height": 972,
+  "fps": 100.0,
+  "attempts": [
+    {
+      "elapsed_seconds": 4764,
+      "frames": 234,
+      "outcome": "episode=0 seed=3299 steps=233 progress=0.330637 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788724319777813200_0620639e",
+      "number": 1,
+      "actions": "training_episodes\\01788724319777813200_0620639e.actions",
+      "seed": 3299,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 4848,
+      "frames": 338,
+      "outcome": "episode=0 seed=3312 steps=337 progress=0.518101 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788724403484948100_11c8a8da",
+      "number": 2,
+      "actions": "training_episodes\\01788724403484948100_11c8a8da.actions",
+      "seed": 3312,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5015,
+      "frames": 485,
+      "outcome": "episode=0 seed=3344 steps=484 progress=0.524319 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788724570512032000_606b73b3",
+      "number": 3,
+      "actions": "training_episodes\\01788724570512032000_606b73b3.actions",
+      "seed": 3344,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5186,
+      "frames": 222,
+      "outcome": "episode=0 seed=3381 steps=221 progress=0.380801 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788725248769971400_962a8dac",
+      "number": 4,
+      "actions": "training_episodes\\01788725248769971400_962a8dac.actions",
+      "seed": 3381,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5332,
+      "frames": 409,
+      "outcome": "episode=0 seed=3407 steps=408 progress=0.535891 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788725394545768100_31fe428b",
+      "number": 5,
+      "actions": "training_episodes\\01788725394545768100_31fe428b.actions",
+      "seed": 3407,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5459,
+      "frames": 278,
+      "outcome": "episode=0 seed=3434 steps=277 progress=0.531926 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788725521836429300_ce10d2d5",
+      "number": 6,
+      "actions": "training_episodes\\01788725521836429300_ce10d2d5.actions",
+      "seed": 3434,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5475,
+      "frames": 169,
+      "outcome": "episode=0 seed=3438 steps=168 progress=0.294569 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788725538137808700_91595f04",
+      "number": 7,
+      "actions": "training_episodes\\01788725538137808700_91595f04.actions",
+      "seed": 3438,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5615,
+      "frames": 441,
+      "outcome": "episode=0 seed=3468 steps=440 progress=0.512269 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788725677695901700_9fdcc5b9",
+      "number": 8,
+      "actions": "training_episodes\\01788725677695901700_9fdcc5b9.actions",
+      "seed": 3468,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5623,
+      "frames": 363,
+      "outcome": "episode=0 seed=3470 steps=362 progress=0.533839 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788725685498999100_96dfba06",
+      "number": 9,
+      "actions": "training_episodes\\01788725685498999100_96dfba06.actions",
+      "seed": 3470,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 5936,
+      "frames": 188,
+      "outcome": "episode=0 seed=3524 steps=187 progress=0.222665 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788725998941279000_e64a6b59",
+      "number": 10,
+      "actions": "training_episodes\\01788725998941279000_e64a6b59.actions",
+      "seed": 3524,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6188,
+      "frames": 162,
+      "outcome": "episode=0 seed=3576 steps=161 progress=0.28314 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788726250595700900_d4814c36",
+      "number": 11,
+      "actions": "training_episodes\\01788726250595700900_d4814c36.actions",
+      "seed": 3576,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6349,
+      "frames": 158,
+      "outcome": "episode=0 seed=3613 steps=157 progress=0.248909 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788726412230952700_95e5f964",
+      "number": 12,
+      "actions": "training_episodes\\01788726412230952700_95e5f964.actions",
+      "seed": 3613,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6530,
+      "frames": 283,
+      "outcome": "episode=0 seed=3647 steps=282 progress=0.443472 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788726593175853000_4a6462db",
+      "number": 13,
+      "actions": "training_episodes\\01788726593175853000_4a6462db.actions",
+      "seed": 3647,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6662,
+      "frames": 174,
+      "outcome": "episode=0 seed=3677 steps=173 progress=0.28795 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788726725084856700_e6c92ddd",
+      "number": 14,
+      "actions": "training_episodes\\01788726725084856700_e6c92ddd.actions",
+      "seed": 3677,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6808,
+      "frames": 182,
+      "outcome": "episode=0 seed=3705 steps=181 progress=0.331985 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788726870916589500_e7a0df46",
+      "number": 15,
+      "actions": "training_episodes\\01788726870916589500_e7a0df46.actions",
+      "seed": 3705,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6885,
+      "frames": 167,
+      "outcome": "episode=0 seed=3724 steps=166 progress=0.328521 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788726948031544700_02a5c0fc",
+      "number": 16,
+      "actions": "training_episodes\\01788726948031544700_02a5c0fc.actions",
+      "seed": 3724,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 6964,
+      "frames": 373,
+      "outcome": "episode=0 seed=3742 steps=372 progress=0.461194 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788727027116814400_5c492de6",
+      "number": 17,
+      "actions": "training_episodes\\01788727027116814400_5c492de6.actions",
+      "seed": 3742,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7011,
+      "frames": 500,
+      "outcome": "episode=0 seed=3752 steps=499 progress=0.537775 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788727074363135700_b62f618e",
+      "number": 18,
+      "actions": "training_episodes\\01788727074363135700_b62f618e.actions",
+      "seed": 3752,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7394,
+      "frames": 142,
+      "outcome": "episode=0 seed=3830 steps=141 progress=0.126012 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788727456583894200_8e725919",
+      "number": 19,
+      "actions": "training_episodes\\01788727456583894200_8e725919.actions",
+      "seed": 3830,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7509,
+      "frames": 285,
+      "outcome": "episode=0 seed=3857 steps=284 progress=0.443603 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788727571806141200_df54bc54",
+      "number": 20,
+      "actions": "training_episodes\\01788727571806141200_df54bc54.actions",
+      "seed": 3857,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7654,
+      "frames": 550,
+      "outcome": "episode=0 seed=3887 steps=549 progress=0.528866 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788727716776684400_1c5e6b29",
+      "number": 21,
+      "actions": "training_episodes\\01788727716776684400_1c5e6b29.actions",
+      "seed": 3887,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7667,
+      "frames": 229,
+      "outcome": "episode=0 seed=3890 steps=228 progress=0.4605 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788727729857517100_cd2e9af3",
+      "number": 22,
+      "actions": "training_episodes\\01788727729857517100_cd2e9af3.actions",
+      "seed": 3890,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7754,
+      "frames": 172,
+      "outcome": "episode=0 seed=3910 steps=171 progress=0.27785 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788727816580691000_d2945e72",
+      "number": 23,
+      "actions": "training_episodes\\01788727816580691000_d2945e72.actions",
+      "seed": 3910,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7780,
+      "frames": 174,
+      "outcome": "episode=0 seed=3918 steps=173 progress=0.2911 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788727843186145600_3da0f652",
+      "number": 24,
+      "actions": "training_episodes\\01788727843186145600_3da0f652.actions",
+      "seed": 3918,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 7858,
+      "frames": 170,
+      "outcome": "episode=0 seed=3936 steps=169 progress=0.313521 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788727921176404200_6c76f181",
+      "number": 25,
+      "actions": "training_episodes\\01788727921176404200_6c76f181.actions",
+      "seed": 3936,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8239,
+      "frames": 167,
+      "outcome": "episode=0 seed=4022 steps=166 progress=0.287226 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788728302040233400_2dcb97ee",
+      "number": 26,
+      "actions": "training_episodes\\01788728302040233400_2dcb97ee.actions",
+      "seed": 4022,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8432,
+      "frames": 539,
+      "outcome": "episode=0 seed=4069 steps=538 progress=0.53768 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788728494487820500_b2e31aae",
+      "number": 27,
+      "actions": "training_episodes\\01788728494487820500_b2e31aae.actions",
+      "seed": 4069,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8437,
+      "frames": 392,
+      "outcome": "episode=0 seed=4070 steps=391 progress=0.531841 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788728499423690400_2d9ea784",
+      "number": 28,
+      "actions": "training_episodes\\01788728499423690400_2d9ea784.actions",
+      "seed": 4070,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8588,
+      "frames": 331,
+      "outcome": "episode=0 seed=4104 steps=330 progress=0.437378 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788728651074161400_13fcefb4",
+      "number": 29,
+      "actions": "training_episodes\\01788728651074161400_13fcefb4.actions",
+      "seed": 4104,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8727,
+      "frames": 132,
+      "outcome": "episode=0 seed=4136 steps=131 progress=0.134359 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788728790137278100_41210b31",
+      "number": 30,
+      "actions": "training_episodes\\01788728790137278100_41210b31.actions",
+      "seed": 4136,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 8924,
+      "frames": 156,
+      "outcome": "episode=0 seed=4181 steps=155 progress=0.211251 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788728986822869100_adc03f6b",
+      "number": 31,
+      "actions": "training_episodes\\01788728986822869100_adc03f6b.actions",
+      "seed": 4181,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9088,
+      "frames": 271,
+      "outcome": "episode=0 seed=4215 steps=270 progress=0.375864 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788729150518133500_13cd108c",
+      "number": 32,
+      "actions": "training_episodes\\01788729150518133500_13cd108c.actions",
+      "seed": 4215,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9208,
+      "frames": 136,
+      "outcome": "episode=0 seed=4245 steps=135 progress=0.119965 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788729270737710800_7a4df0b5",
+      "number": 33,
+      "actions": "training_episodes\\01788729270737710800_7a4df0b5.actions",
+      "seed": 4245,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9355,
+      "frames": 165,
+      "outcome": "episode=0 seed=4277 steps=164 progress=0.303993 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788729418214863900_5f5a3a94",
+      "number": 34,
+      "actions": "training_episodes\\01788729418214863900_5f5a3a94.actions",
+      "seed": 4277,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9406,
+      "frames": 172,
+      "outcome": "episode=0 seed=4290 steps=171 progress=0.303283 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788729469238682600_549732fd",
+      "number": 35,
+      "actions": "training_episodes\\01788729469238682600_549732fd.actions",
+      "seed": 4290,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9503,
+      "frames": 161,
+      "outcome": "episode=0 seed=4310 steps=160 progress=0.270275 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788729566371419100_39dff44f",
+      "number": 36,
+      "actions": "training_episodes\\01788729566371419100_39dff44f.actions",
+      "seed": 4310,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9559,
+      "frames": 175,
+      "outcome": "episode=0 seed=4322 steps=174 progress=0.226213 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788729622066322200_5f12ed05",
+      "number": 37,
+      "actions": "training_episodes\\01788729622066322200_5f12ed05.actions",
+      "seed": 4322,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9729,
+      "frames": 168,
+      "outcome": "episode=0 seed=4356 steps=167 progress=0.302099 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788729792209392100_05933891",
+      "number": 38,
+      "actions": "training_episodes\\01788729792209392100_05933891.actions",
+      "seed": 4356,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 9810,
+      "frames": 476,
+      "outcome": "episode=0 seed=4372 steps=475 progress=0.530222 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788729872936277800_571a0f0a",
+      "number": 39,
+      "actions": "training_episodes\\01788729872936277800_571a0f0a.actions",
+      "seed": 4372,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10231,
+      "frames": 240,
+      "outcome": "episode=0 seed=4459 steps=239 progress=0.375487 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788730293690939100_3ae2ccf3",
+      "number": 40,
+      "actions": "training_episodes\\01788730293690939100_3ae2ccf3.actions",
+      "seed": 4459,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10282,
+      "frames": 352,
+      "outcome": "episode=0 seed=4470 steps=351 progress=0.530672 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788730344509402100_27274bef",
+      "number": 41,
+      "actions": "training_episodes\\01788730344509402100_27274bef.actions",
+      "seed": 4470,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10322,
+      "frames": 166,
+      "outcome": "episode=0 seed=4478 steps=165 progress=0.251693 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788730384781761700_681f712e",
+      "number": 42,
+      "actions": "training_episodes\\01788730384781761700_681f712e.actions",
+      "seed": 4478,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10354,
+      "frames": 273,
+      "outcome": "episode=0 seed=4484 steps=272 progress=0.375588 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788730416591704000_883e7b92",
+      "number": 43,
+      "actions": "training_episodes\\01788730416591704000_883e7b92.actions",
+      "seed": 4484,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10374,
+      "frames": 282,
+      "outcome": "episode=0 seed=4490 steps=281 progress=0.376134 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788730436841969100_abef9331",
+      "number": 44,
+      "actions": "training_episodes\\01788730436841969100_abef9331.actions",
+      "seed": 4490,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 10756,
+      "frames": 264,
+      "outcome": "episode=0 seed=4576 steps=263 progress=0.37053 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788730818817132900_25c2b2ab",
+      "number": 45,
+      "actions": "training_episodes\\01788730818817132900_25c2b2ab.actions",
+      "seed": 4576,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11083,
+      "frames": 205,
+      "outcome": "episode=0 seed=4641 steps=204 progress=0.387284 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788731146391211200_83c35ac2",
+      "number": 46,
+      "actions": "training_episodes\\01788731146391211200_83c35ac2.actions",
+      "seed": 4641,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11092,
+      "frames": 136,
+      "outcome": "episode=0 seed=4644 steps=135 progress=0.216717 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788731154714282300_71b8bde3",
+      "number": 47,
+      "actions": "training_episodes\\01788731154714282300_71b8bde3.actions",
+      "seed": 4644,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11137,
+      "frames": 189,
+      "outcome": "episode=0 seed=4654 steps=188 progress=0.316859 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788731200243812200_eef4fefd",
+      "number": 48,
+      "actions": "training_episodes\\01788731200243812200_eef4fefd.actions",
+      "seed": 4654,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11334,
+      "frames": 153,
+      "outcome": "episode=0 seed=4698 steps=152 progress=0.280857 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788731396790012100_dfda6bca",
+      "number": 49,
+      "actions": "training_episodes\\01788731396790012100_dfda6bca.actions",
+      "seed": 4698,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11343,
+      "frames": 270,
+      "outcome": "episode=0 seed=4702 steps=269 progress=0.375751 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788731405951798500_1d4e3932",
+      "number": 50,
+      "actions": "training_episodes\\01788731405951798500_1d4e3932.actions",
+      "seed": 4702,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11664,
+      "frames": 304,
+      "outcome": "episode=0 seed=4770 steps=303 progress=0.53395 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788731726597980400_2ab7a6aa",
+      "number": 51,
+      "actions": "training_episodes\\01788731726597980400_2ab7a6aa.actions",
+      "seed": 4770,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 11925,
+      "frames": 199,
+      "outcome": "episode=0 seed=4819 steps=198 progress=0.375815 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788731987592666600_582035e1",
+      "number": 52,
+      "actions": "training_episodes\\01788731987592666600_582035e1.actions",
+      "seed": 4819,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12085,
+      "frames": 164,
+      "outcome": "episode=0 seed=4845 steps=163 progress=0.326083 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788732147429189700_3fdb8cdb",
+      "number": 53,
+      "actions": "training_episodes\\01788732147429189700_3fdb8cdb.actions",
+      "seed": 4845,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12194,
+      "frames": 308,
+      "outcome": "episode=0 seed=4868 steps=307 progress=0.531551 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788732256418150400_a01309d8",
+      "number": 54,
+      "actions": "training_episodes\\01788732256418150400_a01309d8.actions",
+      "seed": 4868,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12203,
+      "frames": 190,
+      "outcome": "episode=0 seed=4870 steps=189 progress=0.316869 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788732265416090500_8730c035",
+      "number": 55,
+      "actions": "training_episodes\\01788732265416090500_8730c035.actions",
+      "seed": 4870,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12535,
+      "frames": 166,
+      "outcome": "episode=0 seed=4940 steps=165 progress=0.219572 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788732598267257900_7d51de24",
+      "number": 56,
+      "actions": "training_episodes\\01788732598267257900_7d51de24.actions",
+      "seed": 4940,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12710,
+      "frames": 212,
+      "outcome": "episode=0 seed=4977 steps=211 progress=0.391314 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788732772755537600_db1d5a5f",
+      "number": 57,
+      "actions": "training_episodes\\01788732772755537600_db1d5a5f.actions",
+      "seed": 4977,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12839,
+      "frames": 199,
+      "outcome": "episode=0 seed=5006 steps=198 progress=0.29468 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788732902180382400_37972f4b",
+      "number": 58,
+      "actions": "training_episodes\\01788732902180382400_37972f4b.actions",
+      "seed": 5006,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12863,
+      "frames": 192,
+      "outcome": "episode=0 seed=5012 steps=191 progress=0.304971 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788732925702886300_5e408aa5",
+      "number": 59,
+      "actions": "training_episodes\\01788732925702886300_5e408aa5.actions",
+      "seed": 5012,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 12995,
+      "frames": 166,
+      "outcome": "episode=0 seed=5036 steps=165 progress=0.247873 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788733057433869100_68280272",
+      "number": 60,
+      "actions": "training_episodes\\01788733057433869100_68280272.actions",
+      "seed": 5036,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13242,
+      "frames": 158,
+      "outcome": "episode=0 seed=5093 steps=157 progress=0.263344 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788733304798353100_d05f0e2f",
+      "number": 61,
+      "actions": "training_episodes\\01788733304798353100_d05f0e2f.actions",
+      "seed": 5093,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13417,
+      "frames": 152,
+      "outcome": "episode=0 seed=5121 steps=151 progress=0.259376 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788733479413075300_3245bc59",
+      "number": 62,
+      "actions": "training_episodes\\01788733479413075300_3245bc59.actions",
+      "seed": 5121,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13490,
+      "frames": 122,
+      "outcome": "episode=0 seed=5138 steps=121 progress=0.13009 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788733552972971100_bfd2f2c1",
+      "number": 63,
+      "actions": "training_episodes\\01788733552972971100_bfd2f2c1.actions",
+      "seed": 5138,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13704,
+      "frames": 530,
+      "outcome": "episode=0 seed=5182 steps=529 progress=0.532667 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788733767322021400_b7630cb6",
+      "number": 64,
+      "actions": "training_episodes\\01788733767322021400_b7630cb6.actions",
+      "seed": 5182,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13788,
+      "frames": 215,
+      "outcome": "episode=0 seed=5198 steps=214 progress=0.391463 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788733850754288100_c1e85b36",
+      "number": 65,
+      "actions": "training_episodes\\01788733850754288100_c1e85b36.actions",
+      "seed": 5198,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13973,
+      "frames": 344,
+      "outcome": "episode=0 seed=5237 steps=343 progress=0.377012 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788734036271256400_0fe90b34",
+      "number": 66,
+      "actions": "training_episodes\\01788734036271256400_0fe90b34.actions",
+      "seed": 5237,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 13981,
+      "frames": 282,
+      "outcome": "episode=0 seed=5240 steps=281 progress=0.373492 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788734044319341700_fdd5ac32",
+      "number": 67,
+      "actions": "training_episodes\\01788734044319341700_fdd5ac32.actions",
+      "seed": 5240,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14215,
+      "frames": 159,
+      "outcome": "episode=0 seed=5294 steps=158 progress=0.284874 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788734277721085500_7a396dd9",
+      "number": 68,
+      "actions": "training_episodes\\01788734277721085500_7a396dd9.actions",
+      "seed": 5294,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14351,
+      "frames": 168,
+      "outcome": "episode=0 seed=5325 steps=167 progress=0.29744 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788734413752494800_9b5eaab4",
+      "number": 69,
+      "actions": "training_episodes\\01788734413752494800_9b5eaab4.actions",
+      "seed": 5325,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14519,
+      "frames": 131,
+      "outcome": "episode=0 seed=5357 steps=130 progress=0.118823 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788740674542013300_6a43c6bd",
+      "number": 70,
+      "actions": "training_episodes\\01788740674542013300_6a43c6bd.actions",
+      "seed": 5357,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14520,
+      "frames": 133,
+      "outcome": "episode=0 seed=5358 steps=132 progress=0.118436 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788740675928130100_dc6b0580",
+      "number": 71,
+      "actions": "training_episodes\\01788740675928130100_dc6b0580.actions",
+      "seed": 5358,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14734,
+      "frames": 175,
+      "outcome": "episode=0 seed=5404 steps=174 progress=0.219827 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788740889992114800_d00ad0ca",
+      "number": 72,
+      "actions": "training_episodes\\01788740889992114800_d00ad0ca.actions",
+      "seed": 5404,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 14972,
+      "frames": 147,
+      "outcome": "episode=0 seed=5446 steps=146 progress=0.201037 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788741127439794100_3c0ab073",
+      "number": 73,
+      "actions": "training_episodes\\01788741127439794100_3c0ab073.actions",
+      "seed": 5446,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15100,
+      "frames": 149,
+      "outcome": "episode=0 seed=5475 steps=148 progress=0.240565 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788747614314260200_9a2df43d",
+      "number": 74,
+      "actions": "training_episodes\\01788747614314260200_9a2df43d.actions",
+      "seed": 5475,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15270,
+      "frames": 167,
+      "outcome": "episode=0 seed=5509 steps=166 progress=0.322772 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788747784705809700_6afb31d9",
+      "number": 75,
+      "actions": "training_episodes\\01788747784705809700_6afb31d9.actions",
+      "seed": 5509,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15280,
+      "frames": 170,
+      "outcome": "episode=0 seed=5512 steps=169 progress=0.318594 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788747795018197500_bb272015",
+      "number": 76,
+      "actions": "training_episodes\\01788747795018197500_bb272015.actions",
+      "seed": 5512,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15552,
+      "frames": 162,
+      "outcome": "episode=0 seed=5562 steps=161 progress=0.28439 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788748066500842300_c647abf1",
+      "number": 77,
+      "actions": "training_episodes\\01788748066500842300_c647abf1.actions",
+      "seed": 5562,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15717,
+      "frames": 328,
+      "outcome": "episode=0 seed=5592 steps=327 progress=0.373872 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788748231278077400_408088a1",
+      "number": 78,
+      "actions": "training_episodes\\01788748231278077400_408088a1.actions",
+      "seed": 5592,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15761,
+      "frames": 238,
+      "outcome": "episode=0 seed=5600 steps=237 progress=0.375237 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788748275446461300_2fe98b13",
+      "number": 79,
+      "actions": "training_episodes\\01788748275446461300_2fe98b13.actions",
+      "seed": 5600,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 15998,
+      "frames": 417,
+      "outcome": "episode=0 seed=5648 steps=416 progress=0.447357 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788748513156207900_c991f464",
+      "number": 80,
+      "actions": "training_episodes\\01788748513156207900_c991f464.actions",
+      "seed": 5648,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16034,
+      "frames": 565,
+      "outcome": "episode=0 seed=5656 steps=564 progress=0.812272 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788748548919598200_653e10cb",
+      "number": 81,
+      "actions": "training_episodes\\01788748548919598200_653e10cb.actions",
+      "seed": 5656,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16121,
+      "frames": 518,
+      "outcome": "episode=0 seed=5674 steps=517 progress=0.384811 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788748635781597500_72f5001d",
+      "number": 82,
+      "actions": "training_episodes\\01788748635781597500_72f5001d.actions",
+      "seed": 5674,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16519,
+      "frames": 196,
+      "outcome": "episode=0 seed=5749 steps=195 progress=0.328067 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788749033249067500_241da4fe",
+      "number": 83,
+      "actions": "training_episodes\\01788749033249067500_241da4fe.actions",
+      "seed": 5749,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16531,
+      "frames": 399,
+      "outcome": "episode=0 seed=5752 steps=398 progress=0.499049 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788749045507983700_065a2acb",
+      "number": 84,
+      "actions": "training_episodes\\01788749045507983700_065a2acb.actions",
+      "seed": 5752,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16574,
+      "frames": 228,
+      "outcome": "episode=0 seed=5760 steps=227 progress=0.380502 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788749088287601000_51cdb004",
+      "number": 85,
+      "actions": "training_episodes\\01788749088287601000_51cdb004.actions",
+      "seed": 5760,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16639,
+      "frames": 161,
+      "outcome": "episode=0 seed=5770 steps=160 progress=0.285945 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788749153765546400_845468eb",
+      "number": 86,
+      "actions": "training_episodes\\01788749153765546400_845468eb.actions",
+      "seed": 5770,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16754,
+      "frames": 124,
+      "outcome": "episode=0 seed=5794 steps=123 progress=-0.0177444 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788749268419755900_5a2b7919",
+      "number": 87,
+      "actions": "training_episodes\\01788749268419755900_5a2b7919.actions",
+      "seed": 5794,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 16969,
+      "frames": 173,
+      "outcome": "episode=0 seed=5828 steps=172 progress=0.302729 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788749484083317900_83b3000c",
+      "number": 88,
+      "actions": "training_episodes\\01788749484083317900_83b3000c.actions",
+      "seed": 5828,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17026,
+      "frames": 176,
+      "outcome": "episode=0 seed=5836 steps=175 progress=0.306157 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788749540824191600_2c8b5108",
+      "number": 89,
+      "actions": "training_episodes\\01788749540824191600_2c8b5108.actions",
+      "seed": 5836,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17400,
+      "frames": 80,
+      "outcome": "episode=0 seed=5914 steps=79 progress=0.116519 finished=0 crashed=0 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788749914900646800_463e8ad1",
+      "number": 90,
+      "actions": "training_episodes\\01788749914900646800_463e8ad1.actions",
+      "seed": 5914,
+      "status": "interrupted",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17405,
+      "frames": 194,
+      "outcome": "episode=0 seed=5914 steps=193 progress=0.317974 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788749919806310800_b94896ea",
+      "number": 91,
+      "actions": "training_episodes\\01788749919806310800_b94896ea.actions",
+      "seed": 5914,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17730,
+      "frames": 170,
+      "outcome": "episode=0 seed=5972 steps=169 progress=0.302504 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788750244399262400_66736686",
+      "number": 92,
+      "actions": "training_episodes\\01788750244399262400_66736686.actions",
+      "seed": 5972,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17899,
+      "frames": 212,
+      "outcome": "episode=0 seed=6004 steps=211 progress=0.388757 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788750413926444100_c8481f35",
+      "number": 93,
+      "actions": "training_episodes\\01788750413926444100_c8481f35.actions",
+      "seed": 6004,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 17982,
+      "frames": 168,
+      "outcome": "episode=0 seed=6022 steps=167 progress=0.296989 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788750497031375600_60e84045",
+      "number": 94,
+      "actions": "training_episodes\\01788750497031375600_60e84045.actions",
+      "seed": 6022,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 18260,
+      "frames": 166,
+      "outcome": "episode=0 seed=6077 steps=165 progress=0.323637 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788750774296030000_eb2a2125",
+      "number": 95,
+      "actions": "training_episodes\\01788750774296030000_eb2a2125.actions",
+      "seed": 6077,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 18449,
+      "frames": 457,
+      "outcome": "episode=0 seed=6111 steps=456 progress=0.485432 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788750963483149400_230599f5",
+      "number": 96,
+      "actions": "training_episodes\\01788750963483149400_230599f5.actions",
+      "seed": 6111,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 18632,
+      "frames": 153,
+      "outcome": "episode=0 seed=6149 steps=152 progress=0.22153 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788751146567589500_d686ecd1",
+      "number": 97,
+      "actions": "training_episodes\\01788751146567589500_d686ecd1.actions",
+      "seed": 6149,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 18701,
+      "frames": 158,
+      "outcome": "episode=0 seed=6164 steps=157 progress=0.311944 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788751215755336200_07c3e690",
+      "number": 98,
+      "actions": "training_episodes\\01788751215755336200_07c3e690.actions",
+      "seed": 6164,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 18940,
+      "frames": 265,
+      "outcome": "episode=0 seed=6209 steps=264 progress=0.447884 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788751454677930800_1ed15586",
+      "number": 99,
+      "actions": "training_episodes\\01788751454677930800_1ed15586.actions",
+      "seed": 6209,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19059,
+      "frames": 163,
+      "outcome": "episode=0 seed=6232 steps=162 progress=0.318732 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788751573931301000_c0c26dce",
+      "number": 100,
+      "actions": "training_episodes\\01788751573931301000_c0c26dce.actions",
+      "seed": 6232,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19156,
+      "frames": 201,
+      "outcome": "episode=0 seed=6250 steps=200 progress=0.429201 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788751670658511000_c4ba1053",
+      "number": 101,
+      "actions": "training_episodes\\01788751670658511000_c4ba1053.actions",
+      "seed": 6250,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19240,
+      "frames": 139,
+      "outcome": "episode=0 seed=6266 steps=138 progress=0.204118 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788751754393387600_7c96db21",
+      "number": 102,
+      "actions": "training_episodes\\01788751754393387600_7c96db21.actions",
+      "seed": 6266,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19456,
+      "frames": 161,
+      "outcome": "episode=0 seed=6310 steps=160 progress=0.26469 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788751971152071300_ac9b6fe5",
+      "number": 103,
+      "actions": "training_episodes\\01788751971152071300_ac9b6fe5.actions",
+      "seed": 6310,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19645,
+      "frames": 338,
+      "outcome": "episode=0 seed=6353 steps=337 progress=0.447757 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788752160121218100_ff33ab51",
+      "number": 104,
+      "actions": "training_episodes\\01788752160121218100_ff33ab51.actions",
+      "seed": 6353,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19753,
+      "frames": 169,
+      "outcome": "episode=0 seed=6377 steps=168 progress=0.296672 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788752267391159800_d0a55802",
+      "number": 105,
+      "actions": "training_episodes\\01788752267391159800_d0a55802.actions",
+      "seed": 6377,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 19917,
+      "frames": 158,
+      "outcome": "episode=0 seed=6405 steps=157 progress=0.287394 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788752431221845300_5ce82a63",
+      "number": 106,
+      "actions": "training_episodes\\01788752431221845300_5ce82a63.actions",
+      "seed": 6405,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20022,
+      "frames": 347,
+      "outcome": "episode=0 seed=6424 steps=346 progress=0.538399 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788752536408537700_dfe9555e",
+      "number": 107,
+      "actions": "training_episodes\\01788752536408537700_dfe9555e.actions",
+      "seed": 6424,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20198,
+      "frames": 185,
+      "outcome": "episode=0 seed=6465 steps=184 progress=0.316889 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788752712846323900_ddb2a5d4",
+      "number": 108,
+      "actions": "training_episodes\\01788752712846323900_ddb2a5d4.actions",
+      "seed": 6465,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20273,
+      "frames": 177,
+      "outcome": "episode=0 seed=6480 steps=176 progress=0.31608 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788752787751393700_e55b75c9",
+      "number": 109,
+      "actions": "training_episodes\\01788752787751393700_e55b75c9.actions",
+      "seed": 6480,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20465,
+      "frames": 418,
+      "outcome": "episode=0 seed=6521 steps=417 progress=0.494959 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788752980051998300_b49c6651",
+      "number": 110,
+      "actions": "training_episodes\\01788752980051998300_b49c6651.actions",
+      "seed": 6521,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20525,
+      "frames": 305,
+      "outcome": "episode=0 seed=6532 steps=304 progress=0.411153 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788753039937709000_ffecb54c",
+      "number": 111,
+      "actions": "training_episodes\\01788753039937709000_ffecb54c.actions",
+      "seed": 6532,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20777,
+      "frames": 382,
+      "outcome": "episode=0 seed=6585 steps=381 progress=0.56519 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788753291430505300_bc1eb3b1",
+      "number": 112,
+      "actions": "training_episodes\\01788753291430505300_bc1eb3b1.actions",
+      "seed": 6585,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 20964,
+      "frames": 147,
+      "outcome": "episode=0 seed=6615 steps=146 progress=0.213443 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788753478874384800_a5d34d3f",
+      "number": 113,
+      "actions": "training_episodes\\01788753478874384800_a5d34d3f.actions",
+      "seed": 6615,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21016,
+      "frames": 161,
+      "outcome": "episode=0 seed=6626 steps=160 progress=0.287625 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788753530181830100_57ca0678",
+      "number": 114,
+      "actions": "training_episodes\\01788753530181830100_57ca0678.actions",
+      "seed": 6626,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21249,
+      "frames": 393,
+      "outcome": "episode=0 seed=6673 steps=392 progress=0.537036 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788753763857092900_39448a21",
+      "number": 115,
+      "actions": "training_episodes\\01788753763857092900_39448a21.actions",
+      "seed": 6673,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21442,
+      "frames": 436,
+      "outcome": "episode=0 seed=6705 steps=435 progress=0.470737 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788753956391426900_cf914a70",
+      "number": 116,
+      "actions": "training_episodes\\01788753956391426900_cf914a70.actions",
+      "seed": 6705,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21580,
+      "frames": 182,
+      "outcome": "episode=0 seed=6737 steps=181 progress=0.321747 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788754094571785300_fa6ea142",
+      "number": 117,
+      "actions": "training_episodes\\01788754094571785300_fa6ea142.actions",
+      "seed": 6737,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21582,
+      "frames": 397,
+      "outcome": "episode=0 seed=6738 steps=396 progress=0.53007 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788754096319651500_126d8780",
+      "number": 118,
+      "actions": "training_episodes\\01788754096319651500_126d8780.actions",
+      "seed": 6738,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 21860,
+      "frames": 461,
+      "outcome": "episode=0 seed=6793 steps=460 progress=0.53411 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788754375156880700_d3e0c741",
+      "number": 119,
+      "actions": "training_episodes\\01788754375156880700_d3e0c741.actions",
+      "seed": 6793,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22024,
+      "frames": 260,
+      "outcome": "episode=0 seed=6825 steps=259 progress=0.38301 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788754539013517700_1332cc7b",
+      "number": 120,
+      "actions": "training_episodes\\01788754539013517700_1332cc7b.actions",
+      "seed": 6825,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22141,
+      "frames": 176,
+      "outcome": "episode=0 seed=6853 steps=175 progress=0.316852 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788754655679105100_3279a8ce",
+      "number": 121,
+      "actions": "training_episodes\\01788754655679105100_3279a8ce.actions",
+      "seed": 6853,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22155,
+      "frames": 201,
+      "outcome": "episode=0 seed=6856 steps=200 progress=0.406916 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788754670031664200_03aa2936",
+      "number": 122,
+      "actions": "training_episodes\\01788754670031664200_03aa2936.actions",
+      "seed": 6856,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22166,
+      "frames": 226,
+      "outcome": "episode=0 seed=6858 steps=225 progress=0.390161 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788754680568990300_4949aac6",
+      "number": 123,
+      "actions": "training_episodes\\01788754680568990300_4949aac6.actions",
+      "seed": 6858,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22293,
+      "frames": 381,
+      "outcome": "episode=0 seed=6886 steps=380 progress=0.510837 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788754807508492900_3ffa214d",
+      "number": 124,
+      "actions": "training_episodes\\01788754807508492900_3ffa214d.actions",
+      "seed": 6886,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22394,
+      "frames": 186,
+      "outcome": "episode=0 seed=6908 steps=185 progress=0.31096 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788754908594051400_6acb40f0",
+      "number": 125,
+      "actions": "training_episodes\\01788754908594051400_6acb40f0.actions",
+      "seed": 6908,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22550,
+      "frames": 129,
+      "outcome": "episode=0 seed=6942 steps=128 progress=0.161925 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788755064446349300_3d1628e4",
+      "number": 126,
+      "actions": "training_episodes\\01788755064446349300_3d1628e4.actions",
+      "seed": 6942,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22846,
+      "frames": 223,
+      "outcome": "episode=0 seed=7006 steps=222 progress=0.292298 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788755360293508800_cf926f8b",
+      "number": 127,
+      "actions": "training_episodes\\01788755360293508800_cf926f8b.actions",
+      "seed": 7006,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 22947,
+      "frames": 162,
+      "outcome": "episode=0 seed=7026 steps=161 progress=0.318001 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788755461771197300_92e0f915",
+      "number": 128,
+      "actions": "training_episodes\\01788755461771197300_92e0f915.actions",
+      "seed": 7026,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 23187,
+      "frames": 340,
+      "outcome": "episode=0 seed=7074 steps=339 progress=0.434145 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788755702173778800_e5a15457",
+      "number": 129,
+      "actions": "training_episodes\\01788755702173778800_e5a15457.actions",
+      "seed": 7074,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 23454,
+      "frames": 395,
+      "outcome": "episode=0 seed=7122 steps=394 progress=0.463996 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788755968881644100_2d6a8df8",
+      "number": 130,
+      "actions": "training_episodes\\01788755968881644100_2d6a8df8.actions",
+      "seed": 7122,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 23575,
+      "frames": 155,
+      "outcome": "episode=0 seed=7148 steps=154 progress=0.261984 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788756090172409500_e5b7358a",
+      "number": 131,
+      "actions": "training_episodes\\01788756090172409500_e5b7358a.actions",
+      "seed": 7148,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 23593,
+      "frames": 168,
+      "outcome": "episode=0 seed=7152 steps=167 progress=0.330869 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788756107788839100_ae1ca601",
+      "number": 132,
+      "actions": "training_episodes\\01788756107788839100_ae1ca601.actions",
+      "seed": 7152,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 23923,
+      "frames": 344,
+      "outcome": "episode=0 seed=7215 steps=343 progress=0.375576 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788756437990207600_d47435ed",
+      "number": 133,
+      "actions": "training_episodes\\01788756437990207600_d47435ed.actions",
+      "seed": 7215,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24042,
+      "frames": 365,
+      "outcome": "episode=0 seed=7236 steps=364 progress=0.527542 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788756556349648100_131339d4",
+      "number": 134,
+      "actions": "training_episodes\\01788756556349648100_131339d4.actions",
+      "seed": 7236,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24134,
+      "frames": 147,
+      "outcome": "episode=0 seed=7256 steps=146 progress=0.237499 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788756648447373200_dc9ae3af",
+      "number": 135,
+      "actions": "training_episodes\\01788756648447373200_dc9ae3af.actions",
+      "seed": 7256,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24365,
+      "frames": 338,
+      "outcome": "episode=0 seed=7300 steps=337 progress=0.503543 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788756880163393500_3a16db51",
+      "number": 136,
+      "actions": "training_episodes\\01788756880163393500_3a16db51.actions",
+      "seed": 7300,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24403,
+      "frames": 240,
+      "outcome": "episode=0 seed=7306 steps=239 progress=0.36858 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788756917998455400_f0bc3fb9",
+      "number": 137,
+      "actions": "training_episodes\\01788756917998455400_f0bc3fb9.actions",
+      "seed": 7306,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24492,
+      "frames": 159,
+      "outcome": "episode=0 seed=7322 steps=158 progress=0.250157 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788757007103547600_3dc9f56d",
+      "number": 138,
+      "actions": "training_episodes\\01788757007103547600_3dc9f56d.actions",
+      "seed": 7322,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 24872,
+      "frames": 168,
+      "outcome": "episode=0 seed=7393 steps=167 progress=0.295358 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788757386289764900_c9b2aa81",
+      "number": 139,
+      "actions": "training_episodes\\01788757386289764900_c9b2aa81.actions",
+      "seed": 7393,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25053,
+      "frames": 237,
+      "outcome": "episode=0 seed=7421 steps=236 progress=0.289625 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788757567565360300_e3a9ef6c",
+      "number": 140,
+      "actions": "training_episodes\\01788757567565360300_e3a9ef6c.actions",
+      "seed": 7421,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25245,
+      "frames": 354,
+      "outcome": "episode=0 seed=7453 steps=353 progress=0.534015 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788757759414971800_bed417cd",
+      "number": 141,
+      "actions": "training_episodes\\01788757759414971800_bed417cd.actions",
+      "seed": 7453,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25371,
+      "frames": 168,
+      "outcome": "episode=0 seed=7474 steps=167 progress=0.319283 finished=0 crashed=1 truncated=0",
+      "color": [
+        43,
+        5,
+        148
+      ],
+      "episode_id": "01788757886091166900_26fcbfec",
+      "number": 142,
+      "actions": "training_episodes\\01788757886091166900_26fcbfec.actions",
+      "seed": 7474,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25446,
+      "frames": 191,
+      "outcome": "episode=0 seed=7488 steps=190 progress=0.366796 finished=0 crashed=1 truncated=0",
+      "color": [
+        66,
+        3,
+        157
+      ],
+      "episode_id": "01788757960264281100_3d656dc0",
+      "number": 143,
+      "actions": "training_episodes\\01788757960264281100_3d656dc0.actions",
+      "seed": 7488,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25742,
+      "frames": 346,
+      "outcome": "episode=0 seed=7549 steps=345 progress=0.413227 finished=0 crashed=1 truncated=0",
+      "color": [
+        89,
+        1,
+        164
+      ],
+      "episode_id": "01788758256561275100_5dba4871",
+      "number": 144,
+      "actions": "training_episodes\\01788758256561275100_5dba4871.actions",
+      "seed": 7549,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 25899,
+      "frames": 586,
+      "outcome": "episode=0 seed=7574 steps=585 progress=0.404511 finished=0 crashed=1 truncated=0",
+      "color": [
+        109,
+        0,
+        168
+      ],
+      "episode_id": "01788758413810930200_539e5ab8",
+      "number": 145,
+      "actions": "training_episodes\\01788758413810930200_539e5ab8.actions",
+      "seed": 7574,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26091,
+      "frames": 390,
+      "outcome": "episode=0 seed=7609 steps=389 progress=0.389486 finished=0 crashed=1 truncated=0",
+      "color": [
+        130,
+        4,
+        167
+      ],
+      "episode_id": "01788758605464602200_11c9f964",
+      "number": 146,
+      "actions": "training_episodes\\01788758605464602200_11c9f964.actions",
+      "seed": 7609,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26285,
+      "frames": 252,
+      "outcome": "episode=0 seed=7643 steps=251 progress=0.381907 finished=0 crashed=1 truncated=0",
+      "color": [
+        149,
+        17,
+        161
+      ],
+      "episode_id": "01788758799554624100_d2c09b7d",
+      "number": 147,
+      "actions": "training_episodes\\01788758799554624100_d2c09b7d.actions",
+      "seed": 7643,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26359,
+      "frames": 127,
+      "outcome": "episode=0 seed=7656 steps=126 progress=0.162606 finished=0 crashed=1 truncated=0",
+      "color": [
+        167,
+        33,
+        151
+      ],
+      "episode_id": "01788758873584734400_0202b0e6",
+      "number": 148,
+      "actions": "training_episodes\\01788758873584734400_0202b0e6.actions",
+      "seed": 7656,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26391,
+      "frames": 125,
+      "outcome": "episode=0 seed=7662 steps=124 progress=0.161996 finished=0 crashed=1 truncated=0",
+      "color": [
+        182,
+        47,
+        139
+      ],
+      "episode_id": "01788758905742552800_acd3269f",
+      "number": 149,
+      "actions": "training_episodes\\01788758905742552800_acd3269f.actions",
+      "seed": 7662,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26768,
+      "frames": 157,
+      "outcome": "episode=0 seed=7727 steps=156 progress=0.281812 finished=0 crashed=1 truncated=0",
+      "color": [
+        196,
+        63,
+        126
+      ],
+      "episode_id": "01788759282477715300_a8d8d8aa",
+      "number": 150,
+      "actions": "training_episodes\\01788759282477715300_a8d8d8aa.actions",
+      "seed": 7727,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26941,
+      "frames": 185,
+      "outcome": "episode=0 seed=7759 steps=184 progress=0.244007 finished=0 crashed=1 truncated=0",
+      "color": [
+        209,
+        78,
+        114
+      ],
+      "episode_id": "01788759455450393500_cc967dcc",
+      "number": 151,
+      "actions": "training_episodes\\01788759455450393500_cc967dcc.actions",
+      "seed": 7759,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 26947,
+      "frames": 588,
+      "outcome": "episode=0 seed=7762 steps=587 progress=0.447705 finished=0 crashed=1 truncated=0",
+      "color": [
+        220,
+        94,
+        102
+      ],
+      "episode_id": "01788759462040070400_1f0521a1",
+      "number": 152,
+      "actions": "training_episodes\\01788759462040070400_1f0521a1.actions",
+      "seed": 7762,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 27084,
+      "frames": 165,
+      "outcome": "episode=0 seed=7784 steps=164 progress=0.293287 finished=0 crashed=1 truncated=0",
+      "color": [
+        230,
+        109,
+        90
+      ],
+      "episode_id": "01788759599091529300_df448ca3",
+      "number": 153,
+      "actions": "training_episodes\\01788759599091529300_df448ca3.actions",
+      "seed": 7784,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 27239,
+      "frames": 146,
+      "outcome": "episode=0 seed=7812 steps=145 progress=0.190125 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        126,
+        78
+      ],
+      "episode_id": "01788759753200866800_52d8ce50",
+      "number": 154,
+      "actions": "training_episodes\\01788759753200866800_52d8ce50.actions",
+      "seed": 7812,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 27499,
+      "frames": 126,
+      "outcome": "episode=0 seed=7852 steps=125 progress=0.117593 finished=0 crashed=1 truncated=0",
+      "color": [
+        246,
+        143,
+        67
+      ],
+      "episode_id": "01788760013581056700_8019b1d0",
+      "number": 155,
+      "actions": "training_episodes\\01788760013581056700_8019b1d0.actions",
+      "seed": 7852,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 27564,
+      "frames": 164,
+      "outcome": "episode=0 seed=7864 steps=163 progress=0.302105 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        163,
+        55
+      ],
+      "episode_id": "01788760078649265700_da988717",
+      "number": 156,
+      "actions": "training_episodes\\01788760078649265700_da988717.actions",
+      "seed": 7864,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28028,
+      "frames": 551,
+      "outcome": "episode=0 seed=7937 steps=550 progress=0.441384 finished=0 crashed=1 truncated=0",
+      "color": [
+        253,
+        182,
+        45
+      ],
+      "episode_id": "01788760542604804700_64eab492",
+      "number": 157,
+      "actions": "training_episodes\\01788760542604804700_64eab492.actions",
+      "seed": 7937,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28232,
+      "frames": 914,
+      "outcome": "episode=0 seed=7975 steps=913 progress=0.441722 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        204,
+        37
+      ],
+      "episode_id": "01788760746793532400_981a67fc",
+      "number": 158,
+      "actions": "training_episodes\\01788760746793532400_981a67fc.actions",
+      "seed": 7975,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28418,
+      "frames": 151,
+      "outcome": "episode=0 seed=8003 steps=150 progress=0.240938 finished=0 crashed=1 truncated=0",
+      "color": [
+        247,
+        226,
+        37
+      ],
+      "episode_id": "01788760933144121800_89bbdd17",
+      "number": 159,
+      "actions": "training_episodes\\01788760933144121800_89bbdd17.actions",
+      "seed": 8003,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28553,
+      "frames": 630,
+      "outcome": "episode=0 seed=8031 steps=629 progress=0.532854 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788761067578913400_13529956",
+      "number": 160,
+      "actions": "training_episodes\\01788761067578913400_13529956.actions",
+      "seed": 8031,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28672,
+      "frames": 166,
+      "outcome": "episode=0 seed=8052 steps=165 progress=0.304404 finished=0 crashed=1 truncated=0",
+      "color": [
+        12,
+        7,
+        134
+      ],
+      "episode_id": "01788761186330243600_1f9bf628",
+      "number": 161,
+      "actions": "training_episodes\\01788761186330243600_1f9bf628.actions",
+      "seed": 8052,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28735,
+      "frames": 170,
+      "outcome": "episode=0 seed=8064 steps=169 progress=0.29837 finished=0 crashed=1 truncated=0",
+      "color": [
+        61,
+        3,
+        155
+      ],
+      "episode_id": "01788761249371447200_854e8ea5",
+      "number": 162,
+      "actions": "training_episodes\\01788761249371447200_854e8ea5.actions",
+      "seed": 8064,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 28868,
+      "frames": 154,
+      "outcome": "episode=0 seed=8084 steps=153 progress=0.266724 finished=0 crashed=1 truncated=0",
+      "color": [
+        98,
+        0,
+        166
+      ],
+      "episode_id": "01788761382475245800_4f2ecacd",
+      "number": 163,
+      "actions": "training_episodes\\01788761382475245800_4f2ecacd.actions",
+      "seed": 8084,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29227,
+      "frames": 324,
+      "outcome": "episode=0 seed=8147 steps=323 progress=0.517734 finished=0 crashed=1 truncated=0",
+      "color": [
+        133,
+        6,
+        166
+      ],
+      "episode_id": "01788761741793916900_80784919",
+      "number": 164,
+      "actions": "training_episodes\\01788761741793916900_80784919.actions",
+      "seed": 8147,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29255,
+      "frames": 181,
+      "outcome": "episode=0 seed=8152 steps=180 progress=0.331416 finished=0 crashed=1 truncated=0",
+      "color": [
+        165,
+        31,
+        151
+      ],
+      "episode_id": "01788761769692845300_c7ff4d41",
+      "number": 165,
+      "actions": "training_episodes\\01788761769692845300_c7ff4d41.actions",
+      "seed": 8152,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29260,
+      "frames": 425,
+      "outcome": "episode=0 seed=8154 steps=424 progress=0.40733 finished=0 crashed=1 truncated=0",
+      "color": [
+        191,
+        57,
+        130
+      ],
+      "episode_id": "01788761774391060900_74992312",
+      "number": 166,
+      "actions": "training_episodes\\01788761774391060900_74992312.actions",
+      "seed": 8154,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29534,
+      "frames": 418,
+      "outcome": "episode=0 seed=8210 steps=417 progress=0.373676 finished=0 crashed=1 truncated=0",
+      "color": [
+        213,
+        83,
+        109
+      ],
+      "episode_id": "01788762047703643000_4a28aff4",
+      "number": 167,
+      "actions": "training_episodes\\01788762047703643000_4a28aff4.actions",
+      "seed": 8210,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29547,
+      "frames": 299,
+      "outcome": "episode=0 seed=8214 steps=298 progress=0.532458 finished=0 crashed=1 truncated=0",
+      "color": [
+        231,
+        110,
+        90
+      ],
+      "episode_id": "01788762060502257900_3e79db72",
+      "number": 168,
+      "actions": "training_episodes\\01788762060502257900_3e79db72.actions",
+      "seed": 8214,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29654,
+      "frames": 575,
+      "outcome": "episode=0 seed=8238 steps=574 progress=0.527885 finished=0 crashed=1 truncated=0",
+      "color": [
+        245,
+        141,
+        69
+      ],
+      "episode_id": "01788762167738397700_46fb19a4",
+      "number": 169,
+      "actions": "training_episodes\\01788762167738397700_46fb19a4.actions",
+      "seed": 8238,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29852,
+      "frames": 165,
+      "outcome": "episode=0 seed=8276 steps=164 progress=0.318716 finished=0 crashed=1 truncated=0",
+      "color": [
+        252,
+        173,
+        49
+      ],
+      "episode_id": "01788762365079911300_bc937b1f",
+      "number": 170,
+      "actions": "training_episodes\\01788762365079911300_bc937b1f.actions",
+      "seed": 8276,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 29873,
+      "frames": 166,
+      "outcome": "episode=0 seed=8280 steps=165 progress=0.312297 finished=0 crashed=1 truncated=0",
+      "color": [
+        251,
+        209,
+        36
+      ],
+      "episode_id": "01788762386079556900_c342d32d",
+      "number": 171,
+      "actions": "training_episodes\\01788762386079556900_c342d32d.actions",
+      "seed": 8280,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    },
+    {
+      "elapsed_seconds": 30031,
+      "frames": 163,
+      "outcome": "episode=0 seed=8306 steps=162 progress=0.281382 finished=0 crashed=1 truncated=0",
+      "color": [
+        239,
+        248,
+        33
+      ],
+      "episode_id": "01788762544699321000_858aee26",
+      "number": 172,
+      "actions": "training_episodes\\01788762544699321000_858aee26.actions",
+      "seed": 8306,
+      "status": "terminal",
+      "practice_prefix_steps": 0
+    }
+  ]
+}
