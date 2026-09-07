@@ -1,0 +1,13 @@
+{
+  "format": "gravity-lab-map-overlay-manifest-v1",
+  "videos": [
+    "map_overlay_lg0_t0.mp4",
+    "map_overlay_lg1_t0.mp4",
+    "map_overlay_lg2_t0.mp4"
+  ],
+  "map_count": 3,
+  "policy_count": 0,
+  "source": "actual training actions",
+  "recorded_attempt_count": 5142,
+  "history_recorded_from_start": false
+}

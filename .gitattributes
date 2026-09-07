@@ -1,0 +1,5 @@
+saved_runs/**/*.gdp filter=lfs diff=lfs merge=lfs -text
+saved_runs/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+saved_runs/**/*.png filter=lfs diff=lfs merge=lfs -text
+saved_runs/**/*.svg filter=lfs diff=lfs merge=lfs -text
+saved_runs/**/*.pt filter=lfs diff=lfs merge=lfs -text

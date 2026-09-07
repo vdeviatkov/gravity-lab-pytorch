@@ -1,0 +1,23 @@
+{
+  "run_id": "sac_redq_8hr_coverage_20260906_022918",
+  "run_dir": "/Users/vdeviatkov/Documents/gravity-lab-pytorch/artifacts/sac_redq_8hr_coverage_20260906_022918",
+  "launcher_pid": 30017,
+  "command": [
+    "/usr/bin/caffeinate",
+    "-i",
+    "/Users/vdeviatkov/Documents/gravity-lab-pytorch/.venv/bin/python",
+    "-u",
+    "/Users/vdeviatkov/Documents/gravity-lab-pytorch/scripts/train_watchdog.py",
+    "--run-id",
+    "sac_redq_8hr_coverage_20260906_022918",
+    "--duration-seconds",
+    "28800",
+    "--device",
+    "cpu",
+    "--stall-timeout",
+    "180",
+    "--max-restarts",
+    "20"
+  ],
+  "launched_at": 1788687004.2809432
+}

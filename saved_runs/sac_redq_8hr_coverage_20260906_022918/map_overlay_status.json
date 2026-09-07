@@ -1,0 +1,20 @@
+{
+  "status": "running",
+  "log": "C:\\Users\\wladd\\Documents\\GitHub\\gravity-lab-pytorch\\artifacts\\sac_redq_8hr_coverage_20260906_022918\\map_overlay_generation.log",
+  "command": [
+    "C:\\Users\\wladd\\Documents\\GitHub\\gravity-lab-pytorch\\.venv\\Scripts\\python.exe",
+    "C:\\Users\\wladd\\Documents\\GitHub\\gravity-lab-pytorch\\scripts\\generate_map_overlay.py",
+    "--run-dir",
+    "C:\\Users\\wladd\\Documents\\GitHub\\gravity-lab-pytorch\\artifacts\\sac_redq_8hr_coverage_20260906_022918",
+    "--seed",
+    "2000007",
+    "--jobs",
+    "4",
+    "--source",
+    "auto",
+    "--batch-size",
+    "20",
+    "--tracks",
+    "0:0,1:0,2:0"
+  ]
+}

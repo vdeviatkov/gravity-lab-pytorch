@@ -1,0 +1,20 @@
+{
+  "action_count": 0,
+  "actions_file": "01788750515695866600_2fb47cd1.actions",
+  "ended_seconds": 18001.515393082984,
+  "environment": {
+    "frame_skip": 2,
+    "league": 0,
+    "level_group": 0,
+    "level_pack": null,
+    "max_episode_steps": 2000,
+    "obstacle_ray_count": 32,
+    "track": 2
+  },
+  "format": "gravity-lab-training-episode-v1",
+  "id": "01788750515695866600_2fb47cd1",
+  "practice_prefix_steps": 0,
+  "seed": 6027,
+  "started_seconds": 18001.515393082984,
+  "status": "interrupted"
+}
