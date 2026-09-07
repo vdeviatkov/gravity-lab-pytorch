@@ -34,6 +34,8 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 22 | SAC + REDQ, all-tracks + peak-based progress reward + adaptive curriculum (`success_ema` floor 0.15) | 134 | `configs/classic_all_tracks_sac.json` | 6,660.29s (~1.85h; manually stopped by user, no further diagnosis pending) | 2.14M | 30.0% (9/30) best / 13.3% (4/30) final, stage 1 3/30-episodes | 0.454 best / 0.424 final | complete — **stopped**, matched run #20's peak (9/30/0.456→0.454) but reached it ~3x faster (t=1614s vs t=5211s) with a healthier stage0/stage1 attention split (~35%/65%, no decline recurrence); plateaued at 9/30 for the remaining ~1.3h with no further breakthrough; see "Rebalanced curriculum outcome" below | `policies/classic_sac_redq_curriculum_v2_interim.gdp` |
 | 23 | SAC + REDQ, run #22 config + `gamma` 0.99→0.9995 + `finish_bonus` 10.0→50.0, all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start, SAC can't warm-start) | 2,247.6s (~37min; fail-fast stopped, clearly regressed vs. run #22 at a comparable point) | ~682.7k | 6.7% (2/30) best, stage 0 never advanced past 5% aggregate finish rate (needs 50%) | 0.284 best | complete — **fail-fast stopped**, see "Gamma/finish-bonus regression (run #23)" below | none deployed |
 | 24 | SAC + REDQ, run #22 config + `finish_bonus` 10.0→50.0 only (`gamma` back at 0.99), all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start) | 1,812.3s (~30min; ran to its full duration target, natural stop) | 570.9k | 26.7% (8/30) best (reached by ~t=1452s) / 16.7% (5/30) final | 0.392 best / 0.405 final (last-150 mean) | complete — see "Isolating finish_bonus from run #23's regression" below | `artifacts/sac_redq_finishbonus_only_20260906_021909/best.gdp` (not promoted, did not beat run #22) |
+| 25 | SAC + REDQ, 8-hour coverage run (`sac_redq_8hr_coverage_20260906_022918`), all-tracks | 134 | `configs/classic_all_tracks_sac.json`, cumulative `duration_seconds` raised to 32,400 (9h) mid-lifecycle across several resumes, migrated from macOS to a Windows machine partway through | 30,284.95s (~8.41h; resumed repeatedly over multiple sessions, eventually ran to its raised duration target, natural stop) | 4.08M | 26.7% (8/30) best (mean progress 0.468 at that checkpoint) / 16.7% (5/30) final | 0.468 best / 0.388 final | complete — did not beat run #22's 9/30 ceiling; see "Cross-platform migration: SAC 8-hour run on Windows" below for the porting bugs this run surfaced | `saved_runs/sac_redq_8hr_coverage_20260906_022918/best.gdp` (archived, not promoted) |
+| 26 | PPO, adaptive-curriculum 9-hour extension (`parallel_ppo_20260906`), all-tracks | 102 | embedded run config (v2/v3-lineage architecture, no head-clearance sensor region; inverse-success-weighted curriculum, `entropy_coef 0.03`), cumulative `duration_seconds` target 33,752.4s (~9.38h from a pre-existing partial checkpoint) | 23,590.4s active as of this snapshot (~70% of target; **still in progress, not a final result**) | 53.08M (132,012 episodes) | 43.3% (13/30) best so far, mean progress 0.681 | 0.681 (best so far) | **in progress** — already the best result in this entire log, ahead of every prior run's ~26.7-30.0% (8-9/30) ceiling documented in "Session synthesis"; see "Cross-platform migration" below for the watchdog bug this run exposed | `policies/classic_ppo_parallel_20260906_interim.gdp` (interim snapshot, will be superseded when the run finishes) |
 
 ## Notes
 
@@ -1039,3 +1041,61 @@ has plateaued at (runs #20, #22, #24), reinforcing the "Session synthesis" findi
 plateau is not sensitive to per-step reward-shaping constants. Not promoted over run #22; no further
 `finish_bonus` variants planned unless combined with a change to the underlying representation or
 algorithm rather than reward scale.
+
+## Cross-platform migration: SAC 8-hour run on Windows
+
+Runs #25 and #26 continued on a Windows machine rather than the macOS host every earlier run in this
+log used, surfacing three porting bugs the codebase had never hit before.
+
+**Native library ABI mismatch.** Resuming run #25 initially crashed with
+`AttributeError: function 'gdc_bike_position' not found` — the `gravity-lab` submodule had been
+updated (new C API surface) but the prebuilt `gravity_lab_classic.dll` on the Windows machine was
+stale. Fixed by rebuilding `build-native` (which also outputs into `gravity-lab/build-classic-rl`,
+per the two-build-tree note earlier in this log); required installing a real `make` on `PATH`
+first (`mingw32-make` alone isn't a drop-in — the submodule's SDL2 FetchContent step shells out to
+literal `make`).
+
+**`SDL_main` linkage bug in the classic viewer, latent until a from-scratch Windows build.**
+`gravity_lab_classic_viewer` failed to link: `undefined reference to 'SDL_main'`. Root cause: SDL2's
+pkg-config `Cflags` define `-Dmain=SDL_main`, and SDL2main.a's CRT shim expects an *unmangled* C
+symbol named `SDL_main` — but `apps/classic_policy_viewer.cpp`'s `int main(...)` had no
+`extern "C"`, so after the macro substitution the compiler still C++-mangled it to
+`_Z8SDL_mainiPPc`, which the shim can't resolve. Fixed with `extern "C" int main(...)` (submodule
+commit, `gravity-lab`). Needed because `scripts/generate_map_overlay.py` shells out to this viewer
+binary to render training-attempt replays into the per-run `map_overlay_*.mp4` videos; without it,
+video generation fails outright (`ffmpeg` alone isn't sufficient either — also had to be vendored in
+via `imageio-ffmpeg` since this Windows machine had no system `ffmpeg`).
+
+**Unix-only paths in `scripts/train_watchdog.py` and `scripts/plot_progress.py`.** The watchdog
+hardcoded `.venv/bin/gravity-lab-rl` (no `.exe`, wrong subdirectory on Windows); `plot_progress.py`
+pinned its chart's duration/x-axis to `summary.json`'s `active_training_duration_seconds`, which is
+stale for any run still training past an earlier stop — so a live run's plot silently stopped
+extending past whatever duration was recorded at the last completed stop, even though
+`metrics.jsonl`/`evaluation_history.jsonl` kept growing. Fixed by branching on `sys.platform` for
+the venv `bin`/`Scripts` directory and executable suffix, and by taking the max of
+`summary.json`, `rows[-1]`, and the last evaluation point for the plot's duration instead of
+trusting `summary.json` alone.
+
+**A second, more consequential watchdog bug: an unhandled `PermissionError` in `read_control()`.**
+`train_watchdog.py` correctly caught and recovered its first native-engine stall on run #26 (see
+`docs/training-runs.md`'s longstanding note on this hang, originally found on the "Hole" track), but
+its own polling loop then crashed on the very next `read_control()` call with
+`PermissionError: [Errno 13] Permission denied` reading `control.json` — a transient Windows file-lock
+race where a concurrent reader can briefly fail against `atomic_write_json`'s `os.replace()`
+destination. Because this was an unhandled exception in the watchdog's own process (not the trainer
+it supervises), the watchdog silently exited, leaving its trainer subprocess running with no
+supervision at all. That orphaned trainer then hit a real stall roughly two hours later and sat
+frozen for **~8.5 hours of wall-clock time** before anyone noticed, since nothing was left to
+auto-recover it. Fixed with a short retry-with-backoff (5 attempts, 50ms apart) around the file read
+in `read_control()` (`src/gravity_lab_rl/control.py`) — shared by every caller (CLI, both trainers,
+the watchdog), not just a local patch in the watchdog script.
+
+**Note for future cross-session work on this repo**: while these fixes were in progress, a second,
+independent Claude Code session was concurrently active on this same working copy, made nearly
+identical fixes to the ffmpeg/venv-path/plot-duration bugs above (committed as `2c6d1d6 "Fix Windows
+compatibility for venv paths"`), and separately archived run #25's full output from `artifacts/` to
+a new git-LFS-tracked `saved_runs/` directory (commit `b7f8c66 "Archive 8-hour SAC coverage run"`).
+No data was lost — everything moved intact — but an uncommitted local fix (the `SDL_main` one above)
+was silently reverted when that session's `git pull`/submodule sync reset the submodule to its
+last-recorded commit. Re-applied and committed properly this time
+(`gravity-lab@d354b39`, outer repo `d03e8ca`) specifically so it survives the next sync.
