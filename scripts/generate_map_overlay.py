@@ -27,6 +27,8 @@ from gravity_lab_rl.control import resolve_run
 from gravity_lab_rl.recording import training_episodes
 from generate_map_plates import HEADLESS_ENV, PLATES_DIR, VIEWER, parse_tracks, render_plate
 
+FFMPEG = Path(shutil.which('ffmpeg') or (ROOT / '.venv' / 'Scripts' / 'ffmpeg.exe'))
+
 FRAME_SIZE = (640, 480)
 # With look-ahead disabled the renderer puts the bike reference at this point.
 BIKE_CENTER = (320, 240)
@@ -213,7 +215,7 @@ def generate_video(run_dir, env, checkpoints, args, *, recordings=None, output_p
         output = output_path or run_dir / f'map_overlay_{label}.mp4'
         temporary_output = work / 'video.mp4'
         encoded_size = output_size or canvas.size
-        command = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pixel_format', 'rgb24',
+        command = [str(FFMPEG), '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pixel_format', 'rgb24',
                    '-video_size', f'{encoded_size[0]}x{encoded_size[1]}', '-framerate', str(fps),
                    '-i', '-', '-an', '-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast',
                    '-threads', '2', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(temporary_output)]
@@ -306,7 +308,7 @@ def generate_recorded_video(run_dir, env, records, args):
         # Generated basenames contain no quoting characters; resolve relative to playlist.
         playlist.write_text(''.join(f"file '{p.name}'\n" for p in batches))
         temporary = work / 'complete.mp4'
-        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '1',
+        subprocess.run([str(FFMPEG), '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '1',
                         '-i', str(playlist), '-c', 'copy', '-movflags', '+faststart', str(temporary)], check=True)
         temporary.replace(output)
         output.with_suffix('.json').write_text(json.dumps(dict(
@@ -338,7 +340,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.batch_size < 1 or args.jobs < 1 or args.step_stride < 1 or not math.isfinite(args.speedup) or args.speedup <= 0 or args.trail_length < 0:
         parser.error('step-stride/speedup must be positive and trail-length nonnegative')
-    if not VIEWER.exists() or not shutil.which('ffmpeg'):
+    if not VIEWER.exists() or not FFMPEG.exists():
         parser.error('build the classic viewer and install ffmpeg first')
     run_dir = args.run_dir.resolve() if args.run_dir else resolve_run(args.run_id, args.latest or args.run_id is None)
     config = json.loads((run_dir / 'config.json').read_text())

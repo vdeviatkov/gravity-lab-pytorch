@@ -50,7 +50,8 @@ def main() -> int:
     run_dir = resolve_run(args.run_id, latest=False)
     checkpoint_path = run_dir / "latest.pt"
     control_path = run_dir / "control.json"
-    gravity_lab_rl = str(ROOT / ".venv" / "bin" / "gravity-lab-rl")
+    venv_bin = ROOT / ".venv" / ("Scripts" if sys.platform == "win32" else "bin")
+    gravity_lab_rl = str(venv_bin / ("gravity-lab-rl.exe" if sys.platform == "win32" else "gravity-lab-rl"))
 
     restarts = 0
     status_path = run_dir / 'watchdog.json'

@@ -60,7 +60,8 @@ def plot_run(run, output=None, window=10, best_score=None):
                          'axes.titleweight':'bold','font.family':'DejaVu Sans'})
     fig, axes=plt.subplots(3,2,figsize=(15,12),layout='constrained')
     blue,orange,green='#2463A5','#D97924','#278462'
-    duration=summary.get('active_training_duration_seconds',rows[-1]['active_training_seconds'])/60
+    duration=max(summary.get('active_training_duration_seconds',0),rows[-1]['active_training_seconds'],
+                 points[-1][0]*60 if points else 0)/60
     fig.suptitle(f'Training results — {duration:.1f} minutes\n{run.name}',fontsize=16)
     for ax in axes.flat:
         ax.grid(axis='y',alpha=.2)
