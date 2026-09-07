@@ -53,6 +53,30 @@ For video-only generation or advanced playback settings:
 .venv/bin/python scripts/generate_map_overlay.py --run-id RUN_ID --tracks all
 ```
 
+To make a chronological training video from up to 200 attempts, with 20 bikes
+visible at the same time in each batch, use:
+
+```sh
+# macOS/Linux
+.venv/bin/python scripts/generate_map_overlay.py \
+  --run-id RUN_ID --tracks 2:0 \
+  --source training --batch-size 20 --max-attempts-per-map 200 \
+  --step-stride 1 --speedup 4
+
+# Windows PowerShell
+.venv\Scripts\python.exe scripts\generate_map_overlay.py `
+  --run-id RUN_ID --tracks 2:0 `
+  --source training --batch-size 20 --max-attempts-per-map 200 `
+  --step-stride 1 --speedup 4
+```
+
+When more than 200 attempts are available, the renderer selects 200 attempts
+evenly across the recorded training timeline. When fewer are available, it
+uses every recorded attempt; it does not invent or duplicate runs. Therefore,
+the result may contain fewer than 10 batches, and the final batch may contain
+fewer than 20 bikes. Use `--tracks 2:0,2:1,...` or `--tracks all` to render
+multiple maps.
+
 `--source training` requires actual action recordings. The default `--source auto`
 uses these when present and otherwise generates clearly labeled legacy checkpoint
 replays. `--source checkpoints` explicitly replays saved policies instead. Legacy
