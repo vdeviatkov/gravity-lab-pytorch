@@ -1102,6 +1102,8 @@ last-recorded commit. Re-applied and committed properly this time
 
 ## Search-found demonstrations, backward start curriculum, track-conditioned network
 
+Full description of the current pipeline, inputs, knobs and results: `docs/demo-curriculum.md`.
+
 Motivated by the user's goal of a *single* network that clears all 30 maps (per-map specialists
 were explicitly rejected) and by two observations in this log: the environment is fully
 deterministic (three evaluation seeds always produce identical episodes), and the set of maps a

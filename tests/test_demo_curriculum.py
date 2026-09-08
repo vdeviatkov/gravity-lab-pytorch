@@ -68,3 +68,20 @@ def test_demo_transitions_and_normalization(tmp_path):
     assert scale[ACCELERATION_REGION_END] == 1.0 and bias[ACCELERATION_REGION_END] == 0.0
     normalized = observations * np.asarray(scale) + np.asarray(bias)
     assert abs(float(normalized[:, 0].mean())) < 1e-4 and abs(float(normalized[:, 0].std()) - 1.0) < 1e-3
+
+
+def test_only_greedy_episodes_decide_the_curriculum(tmp_path):
+    demo = _search_intro(tmp_path)
+    cfg = {"enabled": True, "directory": str(tmp_path), "initial_remaining": 30, "step_back": 30,
+           "full_start_probability": 0.0, "greedy_probability": 0.5}
+    curriculum = DemoCurriculum(cfg, [ENV], 1)
+    pointer = curriculum.prefix[0]
+    for _ in range(5):
+        curriculum.record(0, pointer, True, greedy=False)
+    assert curriculum.prefix[0] == pointer and curriculum.advances == 0
+    for _ in range(3):
+        curriculum.record(0, pointer, True, greedy=True)
+    assert curriculum.prefix[0] == pointer - 30 and curriculum.advances == 1
+    with ClassicGravityEnv(ClassicConfig(**ENV, seed=7)) as env:
+        flags = {curriculum.start(env, ENV, 0, 5).greedy for _ in range(30)}
+    assert flags == {True, False}

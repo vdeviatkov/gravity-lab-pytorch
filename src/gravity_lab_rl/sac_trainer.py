@@ -495,7 +495,9 @@ class SACREDQTrainer:
                 while self.current_active_elapsed() < duration and not self._stop_signal:
                     if self._pause_if_requested():
                         break
-                    if previous_action is not None and sticky > 0.0 and self.sticky_rng.random() < sticky:
+                    greedy_episode = bool(getattr(episode_start, "greedy", False))
+                    if (not greedy_episode and previous_action is not None and sticky > 0.0
+                            and self.sticky_rng.random() < sticky):
                         # Temporally extended exploration: a setup maneuver spans dozens of
                         # consecutive 0.04 s decisions, which per-step sampling almost never repeats.
                         action = previous_action
@@ -503,7 +505,10 @@ class SACREDQTrainer:
                         with torch.inference_mode():
                             logits = self.actor(torch.tensor(observation, dtype=torch.float32,
                                                              device=self.device))
-                            action = int(torch.distributions.Categorical(logits=logits).sample().item())
+                            if greedy_episode:
+                                action = int(torch.argmax(logits).item())
+                            else:
+                                action = int(torch.distributions.Categorical(logits=logits).sample().item())
                     previous_action = action
                     step = env.step(action)
                     episode_actions.append(action)
@@ -529,6 +534,7 @@ class SACREDQTrainer:
                             "episode": self.completed_episode_count, "reward": episode_reward,
                             "practice_prefix_steps": practice_prefix_steps,
                             "demo_prefix": self.demos.prefix.get(track_id) if self.demos.enabled else None,
+                            "greedy": bool(getattr(episode_start, "greedy", False)),
                             "peak_progress": peak_progress,
                             "length": episode_length, "progress": float(step.observation[0]),
                             "finished": step.finished, "crashed": step.crashed,
@@ -545,7 +551,8 @@ class SACREDQTrainer:
                         metrics_stream.flush()
                         if not practice_prefix_steps:
                             self._update_track_success(env_cfg, step.finished)
-                        self.demos.record(track_id, practice_prefix_steps, step.finished)
+                        self.demos.record(track_id, practice_prefix_steps, step.finished,
+                                          bool(getattr(episode_start, "greedy", False)))
                         previous_action = None
                         self._episodes_since_switch += 1
                         if self._episodes_since_switch >= episodes_per_track:

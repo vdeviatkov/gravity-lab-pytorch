@@ -1,0 +1,62 @@
+[1:8 Pillar] t=   30s iter=817 cells=1290 best_progress=0.394 steps/s=7971
+[2:7 100%] t=   30s iter=728 cells=1304 best_progress=0.269 steps/s=6527
+[2:9 Trial again] t=   30s iter=629 cells=711 best_progress=0.080 steps/s=5789
+[1:8 Pillar] t=   60s iter=1764 cells=1761 best_progress=0.609 steps/s=7918
+[2:7 100%] t=   60s iter=1118 cells=1639 best_progress=0.275 steps/s=6321
+[1:8 Pillar] t=   90s iter=2270 cells=2439 best_progress=0.876 steps/s=7864
+[2:7 100%] t=   90s iter=1495 cells=1812 best_progress=0.276 steps/s=6242
+[1:8 Pillar] t=  120s iter=2692 cells=2783 best_progress=0.881 steps/s=7824
+[2:7 100%] t=  120s iter=1874 cells=1950 best_progress=0.286 steps/s=6202
+[1:8 Pillar] t=  150s iter=3115 cells=3007 best_progress=0.881 steps/s=7799
+[2:7 100%] t=  150s iter=2256 cells=2039 best_progress=0.287 steps/s=6178
+[1:8 Pillar] t=  180s iter=3535 cells=3359 best_progress=0.914 steps/s=7784
+[2:7 100%] t=  180s iter=2626 cells=2159 best_progress=0.311 steps/s=6158
+[1:8 Pillar] SOLVED: 767 steps, 3545 iterations, 181s -> demos/lg1_t8.json
+[2:7 100%] t=  210s iter=2996 cells=2228 best_progress=0.343 steps/s=6126
+[2:7 100%] t=  240s iter=3297 cells=2539 best_progress=0.470 steps/s=6084
+[2:7 100%] t=  271s iter=3521 cells=2687 best_progress=0.472 steps/s=6011
+[2:7 100%] t=  301s iter=3740 cells=2757 best_progress=0.472 steps/s=5949
+[2:7 100%] t=  331s iter=3962 cells=2843 best_progress=0.477 steps/s=5899
+[2:7 100%] t=  361s iter=4178 cells=2897 best_progress=0.477 steps/s=5863
+[2:7 100%] t=  391s iter=4388 cells=2925 best_progress=0.477 steps/s=5828
+[2:7 100%] t=  421s iter=4608 cells=2964 best_progress=0.477 steps/s=5794
+[2:7 100%] t=  451s iter=4826 cells=2982 best_progress=0.477 steps/s=5770
+[2:7 100%] t=  481s iter=5052 cells=3008 best_progress=0.478 steps/s=5748
+[2:7 100%] t=  511s iter=5282 cells=3064 best_progress=0.479 steps/s=5731
+[2:7 100%] t=  542s iter=5505 cells=3104 best_progress=0.479 steps/s=5714
+[2:7 100%] t=  572s iter=5726 cells=3148 best_progress=0.479 steps/s=5699
+[2:7 100%] t=  602s iter=5945 cells=3188 best_progress=0.479 steps/s=5687
+[2:7 100%] t=  632s iter=6156 cells=3216 best_progress=0.479 steps/s=5673
+[2:7 100%] t=  662s iter=6379 cells=3285 best_progress=0.479 steps/s=5662
+[2:7 100%] t=  692s iter=6611 cells=3345 best_progress=0.479 steps/s=5653
+[2:7 100%] t=  722s iter=6813 cells=3404 best_progress=0.490 steps/s=5643
+[2:7 100%] t=  752s iter=7036 cells=3449 best_progress=0.490 steps/s=5638
+[2:7 100%] t=  782s iter=7257 cells=3494 best_progress=0.492 steps/s=5631
+[2:7 100%] t=  812s iter=7466 cells=3543 best_progress=0.492 steps/s=5623
+[2:7 100%] t=  842s iter=7681 cells=3563 best_progress=0.492 steps/s=5616
+[2:7 100%] t=  873s iter=7886 cells=3630 best_progress=0.492 steps/s=5605
+[2:7 100%] t=  903s iter=8102 cells=3705 best_progress=0.492 steps/s=5598
+[2:7 100%] t=  933s iter=8315 cells=3722 best_progress=0.492 steps/s=5588
+[2:7 100%] t=  963s iter=8532 cells=3764 best_progress=0.497 steps/s=5581
+[2:7 100%] t=  993s iter=8756 cells=3792 best_progress=0.499 steps/s=5576
+[2:7 100%] t= 1023s iter=8972 cells=3816 best_progress=0.499 steps/s=5570
+[2:7 100%] t= 1053s iter=9180 cells=3850 best_progress=0.499 steps/s=5563
+[2:7 100%] t= 1083s iter=9365 cells=4110 best_progress=0.655 steps/s=5555
+[2:7 100%] t= 1113s iter=9530 cells=4219 best_progress=0.660 steps/s=5545
+[2:7 100%] t= 1143s iter=9692 cells=4312 best_progress=0.660 steps/s=5535
+[2:7 100%] t= 1173s iter=9841 cells=4347 best_progress=0.661 steps/s=5526
+[2:7 100%] t= 1203s iter=9998 cells=4417 best_progress=0.661 steps/s=5517
+[2:7 100%] t= 1233s iter=10144 cells=4439 best_progress=0.661 steps/s=5508
+[2:7 100%] t= 1264s iter=10307 cells=4491 best_progress=0.664 steps/s=5503
+[2:7 100%] t= 1294s iter=10471 cells=4515 best_progress=0.664 steps/s=5496
+[2:7 100%] t= 1324s iter=10623 cells=4555 best_progress=0.664 steps/s=5489
+[2:7 100%] t= 1354s iter=10779 cells=4601 best_progress=0.670 steps/s=5481
+[2:7 100%] t= 1384s iter=10931 cells=4637 best_progress=0.672 steps/s=5474
+[2:7 100%] t= 1414s iter=11094 cells=4769 best_progress=0.702 steps/s=5468
+[2:7 100%] t= 1445s iter=11239 cells=4872 best_progress=0.705 steps/s=5461
+[2:7 100%] t= 1475s iter=11381 cells=4923 best_progress=0.718 steps/s=5454
+[2:7 100%] t= 1505s iter=11500 cells=5290 best_progress=0.948 steps/s=5447
+[2:7 100%] t= 1535s iter=11619 cells=5413 best_progress=0.948 steps/s=5440
+[2:7 100%] SOLVED: 1885 steps, 11652 iterations, 1545s -> demos/lg2_t7.json
+
+solved 3/3: 1:8 2:7 2:9

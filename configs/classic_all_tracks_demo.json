@@ -108,10 +108,11 @@
     "directory": "demos",
     "enabled": true,
     "full_start_probability": 0.2,
+    "greedy_probability": 0.5,
     "initial_remaining": 50,
     "retreat_window": 6,
-    "step_back": 50,
-    "sticky_action_probability": 0.5
+    "step_back": 80,
+    "sticky_action_probability": 0.3
   },
   "environment": {
     "frame_skip": 2,
@@ -124,7 +125,7 @@
   },
   "environment_id": "gravity-lab-classic-v1",
   "experiment": {
-    "best_checkpoint_eval_interval_seconds": 300,
+    "best_checkpoint_eval_interval_seconds": 600,
     "checkpoint_interval_seconds": 120,
     "checkpoint_selection_rule": "best (finish_rate, mean_progress) seen during periodic evaluation",
     "device": "cpu",

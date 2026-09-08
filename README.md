@@ -11,6 +11,10 @@ to regenerate the plot and videos for all recorded maps.
 Complete map assets, video prerequisites, and opt-out settings are described in
 [Full-map training videos](docs/map-videos.md).
 
+For the current approach to training one network across all 30 maps (search-found
+demonstrations, a backward start curriculum and behavior cloning on top of SAC+REDQ), see
+[docs/demo-curriculum.md](docs/demo-curriculum.md).
+
 ## Quick start
 
 Install native dependencies.

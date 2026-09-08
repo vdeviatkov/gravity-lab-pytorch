@@ -39,6 +39,10 @@ DEFAULTS: dict[str, Any] = {
     "bc_weight": 1.0,              # behavior-cloning cross-entropy weight on the actor
     "bc_batch_size": 64,           # demo transitions mixed into every optimizer step
     "sticky_action_probability": 0.5,  # rollout: repeat the previous action instead of resampling
+    # Share of demo-start episodes run greedily (argmax, no sticky repeats). Only those decide
+    # advances/retreats, so the curriculum is gated on the same deterministic policy that formal
+    # evaluation measures; the rest keep exploring. 0 means every demo-start episode counts.
+    "greedy_probability": 0.0,
 }
 
 
@@ -52,6 +56,7 @@ class EpisodeStart:
     seed: int
     actions: list[int]
     peak_progress: float
+    greedy: bool = False
 
 
 class DemoCurriculum:
@@ -90,12 +95,15 @@ class DemoCurriculum:
             peak = max(peak, observation[0])
         if hasattr(env, "mark_practice_prefix"):
             env.mark_practice_prefix(prefix)
-        return EpisodeStart(observation, demo.seed, list(demo.actions[:prefix]), peak)
+        greedy = self.rng.random() < float(self.config["greedy_probability"])
+        return EpisodeStart(observation, demo.seed, list(demo.actions[:prefix]), peak, greedy)
 
-    def record(self, track_id: int, prefix_steps: int, finished: bool) -> None:
+    def record(self, track_id: int, prefix_steps: int, finished: bool, greedy: bool = True) -> None:
         """Outcome of an episode that started `prefix_steps` into the demo (0 = full start)."""
         if prefix_steps == 0 or track_id not in self.demos or prefix_steps != self.prefix.get(track_id):
             return  # full-start episodes and stale pointers do not move the takeover point
+        if float(self.config["greedy_probability"]) > 0.0 and not greedy:
+            return  # exploratory episodes do not decide the curriculum
         history = self.history[track_id]
         history.append(bool(finished))
         advance_window, retreat_window = int(self.config["advance_window"]), int(self.config["retreat_window"])

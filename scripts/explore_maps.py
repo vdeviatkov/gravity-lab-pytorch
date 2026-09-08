@@ -30,8 +30,10 @@ from gravity_lab_rl.config import curriculum_environments, load_config  # noqa: 
 from gravity_lab_rl.explore import CellSpec, MapSearch, SearchConfig, demo_filename, verify_demo  # noqa: E402
 
 
-def archive_path_for(output: Path) -> Path:
-    return output.with_name(output.stem + ".archive.json")
+def archive_path_for(output: Path, rng_seed: int) -> Path:
+    # Per search variant (base rng seed), so parallel variants neither clobber each other's
+    # archive nor mask each other's liveness heartbeat.
+    return output.with_name(f"{output.stem}.archive_{rng_seed % 1000}.json")
 
 
 def search_one(env_cfg: dict, seed: int, output: Path, time_budget: float, rng_seed: int,
@@ -52,7 +54,7 @@ def search_one(env_cfg: dict, seed: int, output: Path, time_budget: float, rng_s
                   f"best_progress={s.best_progress:.3f} steps/s={s.steps / max(elapsed, 1e-9):.0f}", flush=True)
 
         searcher = MapSearch(env, env_cfg, seed, search, rng_seed)
-        archive = archive_path_for(output)
+        archive = archive_path_for(output, rng_seed)
         if archive.exists():
             loaded = searcher.load_archive(archive)
             print(f"[{label} {name}] resumed archive: {loaded} cells, best_progress={searcher.best_progress:.3f}", flush=True)
@@ -138,7 +140,7 @@ def main() -> int:
         running[pair] = {"process": subprocess.Popen(command), "started": time.monotonic()}
 
     def heartbeat_age(pair: tuple[int, int], started: float) -> float:
-        archive = archive_path_for(output_dir / demo_filename(*pair))
+        archive = archive_path_for(output_dir / demo_filename(*pair), args.rng_seed)
         if archive.exists():
             return time.time() - archive.stat().st_mtime
         return time.monotonic() - started

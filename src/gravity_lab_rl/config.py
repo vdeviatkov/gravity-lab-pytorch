@@ -182,6 +182,8 @@ def validate_config(config: dict[str, Any]) -> None:
                 raise ValueError(f'demos.{field} must be a nonnegative integer')
         if not 0 <= float(demos.get('full_start_probability', 0.2)) <= 1:
             raise ValueError('demos.full_start_probability must be in [0, 1]')
+        if not 0 <= float(demos.get('greedy_probability', 0.0)) <= 1:
+            raise ValueError('demos.greedy_probability must be in [0, 1]')
         if not 0 <= float(demos.get('sticky_action_probability', 0.5)) < 1:
             raise ValueError('demos.sticky_action_probability must be in [0, 1)')
         if float(demos.get('bc_weight', 1.0)) < 0:
