@@ -35,6 +35,23 @@ def _nudge_past_stall(checkpoint_path: Path) -> None:
     save_checkpoint(checkpoint_path, checkpoint)
 
 
+def _kill_process_tree(process: subprocess.Popen) -> None:
+    """Kill the stalled trainer and every process it spawned.
+
+    On Windows the console-script shim and the venv launcher each re-exec into the base
+    interpreter, so `process` is several levels above the interpreter that is actually
+    blocked inside the native solver. Popen.kill() maps to TerminateProcess, which ends
+    only that outermost launcher and would leave the hung trainer running against the
+    same run directory while a fresh resume starts writing to it.
+    """
+    if sys.platform == "win32":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                       capture_output=True, check=False)
+    else:
+        process.kill()
+    process.wait()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
@@ -91,8 +108,7 @@ def main() -> int:
         if stalled:
             print(f"stall detected (no control-file update for {args.stall_timeout:.0f}s); "
                   "killing and resuming past it")
-            process.kill()
-            process.wait()
+            _kill_process_tree(process)
             if read_control(control_path).get('requested') == 'stop':
                 atomic_write_json(status_path, {'state': 'stopped', 'restarts': restarts})
                 return 0
