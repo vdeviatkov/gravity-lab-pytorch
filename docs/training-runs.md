@@ -1099,3 +1099,89 @@ No data was lost — everything moved intact — but an uncommitted local fix (t
 was silently reverted when that session's `git pull`/submodule sync reset the submodule to its
 last-recorded commit. Re-applied and committed properly this time
 (`gravity-lab@d354b39`, outer repo `d03e8ca`) specifically so it survives the next sync.
+
+## Search-found demonstrations, backward start curriculum, track-conditioned network
+
+Motivated by the user's goal of a *single* network that clears all 30 maps (per-map specialists
+were explicitly rejected) and by two observations in this log: the environment is fully
+deterministic (three evaluation seeds always produce identical episodes), and the set of maps a
+shared network solves flickers between evaluations even under uniform exposure (8h coverage run:
+3-7 maps at any one evaluation, 8/30 best). Those separate the problem into *finding* each hard
+maneuver and *retaining* 30 solutions in one network, and neither is addressed by reward
+constants, gamma, or curriculum weighting, which is where every earlier run plateaued.
+
+**1. Go-Explore search for one demonstration per map** (`src/gravity_lab_rl/explore.py`,
+`scripts/explore_maps.py`). No neural network: an archive of cells keyed by (2% progress bin,
+center-velocity bin, wheel-pitch bin), each keeping the shortest action prefix that reaches it;
+each iteration picks a cell (half the time from the progress frontier, otherwise weighted by
+`1/sqrt(1 + times chosen)`), reconstructs its state by replaying the prefix from the fixed seed
+(the exact reconstruction `practice.py` already relied on), then explores for up to 150 steps with
+random actions held for a geometric number of steps (mean 8). The hold is the point: a setup
+maneuver spans dozens of consecutive 0.04 s decisions, which per-step policy noise essentially
+never reproduces. The first prefix that finishes is verified by a second replay and saved as
+`demos/lg<G>_t<T>.json` with the league / frame skip / ray count / episode limit it was found
+under; `load_demos` refuses a demo whose settings differ from the training config. Runs one
+process per map (engine limit) at ~6-10k steps/s, under a wall-clock timeout because of the
+known native-engine hang. First pass, 900 s budget per map, 10 workers: Deep (never finished by
+any policy in this log) in 52 s, Hole 48 s, Spikeholes 97 s, Hillclimb 181 s, Blocks 195 s,
+Dantes Peak 378 s.
+
+**2. Backward start curriculum + demonstration replay** (`src/gravity_lab_rl/demo_curriculum.py`,
+wired into `sac_trainer.py` under a `demos` config block). Per map, a takeover point starts
+`initial_remaining` (50) demo steps before the finish; an episode replays the demo prefix up to
+that point and hands over to the policy (prefix steps are not learned from, the original peak
+progress is reconstructed, and `mark_practice_prefix` records the prefix for the episode videos).
+Three successes in the last four attempts move the point `step_back` (50) steps toward the start;
+six straight failures move it forward again. `full_start_probability` (0.2) of episodes ignore the
+demo, and only those feed the existing per-track success EMA and formal evaluation, which stays
+full-start only. All 30 maps are active from the first minute (`unlock_all` + guaranteed coverage
+by total episode count). Every demo transition, with the same reward and n-step treatment as
+online data, sits permanently in a second per-track-balanced replay buffer: each optimizer step
+concatenates `bc_batch_size` (64) demo transitions into the critic batch and adds
+`bc_weight` (1.0) x cross-entropy between the actor and the demo action on that slice (DQfD-style
+anchor). Rollouts repeat the previous action with `sticky_action_probability` (0.5) instead of
+resampling, for temporally extended exploration. Obstacle practice and demos are mutually
+exclusive; `practice.py` stays available for configs without demos.
+
+**3. Track-conditioned network** (`TrackConditionedNetwork` in `model.py`,
+`algorithm.network: "track_conditioned"`). Trunk `[512, 512, 256]` with the 30-wide track one-hot
+(already in the observation at `[72, 102)`) re-injected as extra inputs to every hidden layer,
+i.e. a learned per-track bias per layer, and one output head per track (30 x 9 logits, the row
+selected by the observation's track id), so the layer where cross-map interference landed is no
+longer shared. Critics get LayerNorm (`critic_layer_norm`); the actor does not, because it must
+export. `export.py` emits an *exact* plain relu/linear `.gdp` equivalent: the one-hot is carried
+through the trunk as identity pass-through units, and the heads become one relu layer of
+2 x 30 x 9 units, `relu(+-z + M*(onehot_t - 1))`, summed as `pos - neg` per action -- the selected
+track's head passes through unchanged (`M*1 - M` is exactly zero) and every other head is zero
+while `|z| < M = 1e5` (`tests/test_track_conditioned.py` checks parity against `DenseQPolicy`
+to 1e-9). The AI Arcade, viewer, and C++ loader need no change; the file is ~13 MB. Observation
+normalization is derived once from the demo transitions (`normalization.kind:
+"demo_statistics"` -> fixed per-feature scale/bias, one-hot region forced to identity) and frozen
+into the checkpoint and export. `evaluation_episodes` is 1: the environment is deterministic, so
+repeats were identical.
+
+`configs/classic_all_tracks_demo.json` carries all of the above (SAC+REDQ otherwise as run #24,
+`target_entropy_ratio` lowered 0.7 -> 0.3 because exploration now comes from demos and sticky
+actions rather than a near-uniform policy, `torch_num_threads` 4). `scripts/launch_run.py`
+creates the run (building the demo replay and normalization) and starts it under
+`train_watchdog.py`.
+
+**Input pruning and the no-map-identity variant.** Two constant-zero regions were found while
+building the normalization: indices 4-5 (physics point 0's offset relative to itself) and 60-71,
+the "acceleration" region, which the engine reads from the final integrator slot whose force
+accumulators are never written -- every run since run #5 trained with those 12 inputs at zero.
+`algorithm.excluded_inputs` lists observation entries the network never connects to (the
+exported policy keeps the full 134-wide observation with zero first-layer weights on them, so no
+loader changes). At the user's request the track one-hot (72-101) is also dropped in
+`configs/classic_all_tracks_demo_noid.json` (`track_conditioning: false`), along with the
+redundant `1 - progress` at index 1: with map identity plus progress the network could memorize
+each map as a position-indexed action sequence, which is not the player the user wants. That
+variant is a plain 3-layer MLP over 89 inputs (progress, start flag, league, 22 point offsets and
+velocities, 32 obstacle rays, 32 head-clearance rays) with one 9-way head, so map identity has to
+be inferred from the terrain sensors; demos, backward curriculum and BC are unchanged. Both
+variants were launched in parallel from the same 27 demos (`demo_curriculum_20260907_174912`
+with track heads, `demo_curriculum_noid_20260907_175241` without) as a direct comparison of the
+generalization cost. Three maps had no demo at launch (Pillar 1:8, "100%" 2:7, "Trial again"
+2:9; the search's workers hang in the native engine on the latter two) and train from the
+normal start; adding a demo file later and resuming the run picks it up, since the demo replay
+and takeover points are rebuilt from `demos/` at every start.

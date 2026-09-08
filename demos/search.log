@@ -1,0 +1,193 @@
+[0:0 Intro] SOLVED: 568 steps, 8 iterations, 0s -> demos/lg0_t0.json
+[0:1 Shorty] SOLVED: 627 steps, 37 iterations, 1s -> demos/lg0_t1.json
+[0:3 Crackle] SOLVED: 853 steps, 24 iterations, 2s -> demos/lg0_t3.json
+[0:6 Cliff] SOLVED: 495 steps, 209 iterations, 5s -> demos/lg0_t6.json
+[0:2 Slope] SOLVED: 1616 steps, 93 iterations, 10s -> demos/lg0_t2.json
+[0:9 Savvy] SOLVED: 669 steps, 231 iterations, 12s -> demos/lg0_t9.json
+[1:2 Downhill] SOLVED: 873 steps, 277 iterations, 12s -> demos/lg1_t2.json
+[0:4 Knolls] SOLVED: 1015 steps, 180 iterations, 17s -> demos/lg0_t4.json
+[0:5 Deep] t=   30s iter=732 cells=913 best_progress=0.768 steps/s=9278
+[0:8 Original] t=   30s iter=382 cells=570 best_progress=0.395 steps/s=6483
+[0:7 Hole] t=   30s iter=698 cells=933 best_progress=0.866 steps/s=9191
+[1:0 Indoor] t=   30s iter=865 cells=1294 best_progress=0.935 steps/s=12270
+[1:1 Spikeholes] t=   30s iter=463 cells=997 best_progress=0.820 steps/s=6762
+[1:0 Indoor] SOLVED: 743 steps, 907 iterations, 32s -> demos/lg1_t0.json
+[1:3 Hillclimb] t=   30s iter=440 cells=831 best_progress=0.397 steps/s=7096
+[1:4 Modesty] t=   30s iter=659 cells=786 best_progress=0.652 steps/s=6520
+[1:5 Blocks] t=   30s iter=509 cells=800 best_progress=0.495 steps/s=6621
+[1:6 Bumps] t=   30s iter=820 cells=1064 best_progress=0.564 steps/s=9412
+[1:7 Spikehops] t=   30s iter=314 cells=916 best_progress=0.793 steps/s=6637
+[0:7 Hole] SOLVED: 694 steps, 1017 iterations, 48s -> demos/lg0_t7.json
+[0:5 Deep] SOLVED: 688 steps, 1200 iterations, 52s -> demos/lg0_t5.json
+[0:8 Original] t=   60s iter=620 cells=854 best_progress=0.797 steps/s=6427
+[1:1 Spikeholes] t=   60s iter=731 cells=1218 best_progress=0.872 steps/s=6734
+[1:8 Pillar] t=   30s iter=780 cells=928 best_progress=0.397 steps/s=8597
+[1:3 Hillclimb] t=   60s iter=835 cells=1064 best_progress=0.432 steps/s=7066
+[1:4 Modesty] t=   60s iter=987 cells=1095 best_progress=0.745 steps/s=6417
+[1:5 Blocks] t=   60s iter=897 cells=1010 best_progress=0.620 steps/s=6597
+[1:6 Bumps] t=   60s iter=1621 cells=1368 best_progress=0.566 steps/s=9384
+[1:7 Spikehops] t=   60s iter=528 cells=1192 best_progress=0.821 steps/s=6617
+[1:9 Trenches] t=   30s iter=606 cells=766 best_progress=0.398 steps/s=7504
+[1:6 Bumps] SOLVED: 786 steps, 1744 iterations, 65s -> demos/lg1_t6.json
+[2:0 Floorboards] t=   30s iter=497 cells=1007 best_progress=0.731 steps/s=7438
+[0:8 Original] t=   90s iter=806 cells=924 best_progress=0.804 steps/s=6408
+[1:1 Spikeholes] t=   90s iter=990 cells=1360 best_progress=0.875 steps/s=6745
+[1:8 Pillar] t=   60s iter=1600 cells=1351 best_progress=0.654 steps/s=8590
+[1:3 Hillclimb] t=   90s iter=1212 cells=1177 best_progress=0.432 steps/s=7080
+[1:1 Spikeholes] SOLVED: 1140 steps, 1041 iterations, 97s -> demos/lg1_t1.json
+[1:4 Modesty] t=   90s iter=1299 cells=1315 best_progress=0.745 steps/s=6398
+[1:5 Blocks] t=   90s iter=1279 cells=1191 best_progress=0.646 steps/s=6607
+[1:7 Spikehops] t=   90s iter=711 cells=1388 best_progress=0.839 steps/s=6626
+[1:9 Trenches] t=   60s iter=1064 cells=1103 best_progress=0.654 steps/s=7500
+[2:1 Tip top] t=   30s iter=656 cells=850 best_progress=0.131 steps/s=9330
+[2:0 Floorboards] t=   60s iter=846 cells=1479 best_progress=0.731 steps/s=7423
+[0:8 Original] t=  120s iter=982 cells=969 best_progress=0.805 steps/s=6400
+[1:8 Pillar] t=   90s iter=2227 cells=1685 best_progress=0.660 steps/s=8566
+[1:3 Hillclimb] t=  120s iter=1579 cells=1300 best_progress=0.432 steps/s=7088
+[2:2 Dantes Peak] t=   30s iter=621 cells=601 best_progress=0.132 steps/s=6443
+[1:4 Modesty] t=  120s iter=1610 cells=1469 best_progress=0.771 steps/s=6386
+[1:5 Blocks] t=  120s iter=1624 cells=1502 best_progress=0.759 steps/s=6608
+[1:7 Spikehops] SOLVED: 1550 steps, 892 iterations, 119s -> demos/lg1_t7.json
+[1:9 Trenches] t=   90s iter=1458 cells=1200 best_progress=0.663 steps/s=7499
+[2:1 Tip top] t=   60s iter=1362 cells=1274 best_progress=0.545 steps/s=9317
+[2:0 Floorboards] t=   90s iter=1197 cells=1777 best_progress=0.731 steps/s=7424
+[0:8 Original] t=  150s iter=1174 cells=1062 best_progress=0.842 steps/s=6399
+[1:8 Pillar] t=  120s iter=2873 cells=1865 best_progress=0.666 steps/s=8554
+[1:3 Hillclimb] t=  150s iter=1961 cells=1367 best_progress=0.457 steps/s=7094
+[2:2 Dantes Peak] t=   60s iter=1160 cells=730 best_progress=0.147 steps/s=6440
+[1:4 Modesty] t=  150s iter=1923 cells=1543 best_progress=0.771 steps/s=6381
+[1:5 Blocks] t=  150s iter=1917 cells=1752 best_progress=0.781 steps/s=6605
+[2:3 Abrupt] t=   30s iter=532 cells=1306 best_progress=0.569 steps/s=7701
+[1:9 Trenches] t=  120s iter=1843 cells=1287 best_progress=0.666 steps/s=7489
+[2:1 Tip top] t=   90s iter=1760 cells=1778 best_progress=0.788 steps/s=9194
+[2:0 Floorboards] t=  120s iter=1536 cells=1959 best_progress=0.731 steps/s=7408
+[0:8 Original] SOLVED: 1473 steps, 1321 iterations, 175s -> demos/lg0_t8.json
+[1:8 Pillar] t=  150s iter=3545 cells=1955 best_progress=0.668 steps/s=8532
+[1:3 Hillclimb] t=  180s iter=2268 cells=1692 best_progress=0.965 steps/s=7082
+[1:3 Hillclimb] SOLVED: 1423 steps, 2271 iterations, 181s -> demos/lg1_t3.json
+[2:2 Dantes Peak] t=   90s iter=1722 cells=820 best_progress=0.147 steps/s=6407
+[1:4 Modesty] t=  180s iter=2235 cells=1635 best_progress=0.771 steps/s=6367
+[1:5 Blocks] t=  180s iter=2147 cells=1958 best_progress=0.840 steps/s=6588
+[2:3 Abrupt] t=   60s iter=894 cells=1632 best_progress=0.596 steps/s=7623
+[1:9 Trenches] t=  150s iter=2233 cells=1351 best_progress=0.667 steps/s=7473
+[2:1 Tip top] t=  120s iter=2115 cells=2083 best_progress=0.801 steps/s=9119
+[2:0 Floorboards] t=  150s iter=1852 cells=2199 best_progress=0.860 steps/s=7397
+[2:4 Undertaker] t=   30s iter=643 cells=1245 best_progress=0.781 steps/s=5816
+[1:5 Blocks] SOLVED: 1485 steps, 2248 iterations, 195s -> demos/lg1_t5.json
+[2:5 Liberty] SOLVED: 696 steps, 621 iterations, 24s -> demos/lg2_t5.json
+[1:8 Pillar] t=  180s iter=4149 cells=2295 best_progress=0.868 steps/s=8511
+[2:2 Dantes Peak] t=  120s iter=2320 cells=878 best_progress=0.147 steps/s=6391
+[1:4 Modesty] t=  211s iter=2543 cells=1682 best_progress=0.771 steps/s=6355
+[2:0 Floorboards] SOLVED: 864 steps, 2103 iterations, 174s -> demos/lg2_t0.json
+[2:3 Abrupt] t=   90s iter=1285 cells=2041 best_progress=0.741 steps/s=7619
+[1:9 Trenches] t=  180s iter=2629 cells=1462 best_progress=0.667 steps/s=7459
+[2:1 Tip top] t=  150s iter=2469 cells=2307 best_progress=0.885 steps/s=9064
+[2:1 Tip top] SOLVED: 1062 steps, 2479 iterations, 151s -> demos/lg2_t1.json
+[2:4 Undertaker] t=   60s iter=1254 cells=1660 best_progress=0.796 steps/s=5806
+[2:6 Intense] t=   30s iter=568 cells=773 best_progress=0.431 steps/s=6192
+[2:7 100%] t=   30s iter=947 cells=726 best_progress=0.135 steps/s=7134
+[1:8 Pillar] t=  210s iter=4605 cells=2398 best_progress=0.868 steps/s=8478
+[2:2 Dantes Peak] t=  150s iter=2935 cells=915 best_progress=0.147 steps/s=6375
+[1:4 Modesty] t=  241s iter=2840 cells=1725 best_progress=0.771 steps/s=6342
+[2:8 Training day] t=   30s iter=617 cells=1005 best_progress=0.552 steps/s=6721
+[2:3 Abrupt] t=  120s iter=1590 cells=2284 best_progress=0.948 steps/s=7609
+[1:9 Trenches] t=  210s iter=2986 cells=1664 best_progress=0.738 steps/s=7442
+[2:9 Trial again] t=   30s iter=748 cells=514 best_progress=0.079 steps/s=6132
+[2:4 Undertaker] t=   90s iter=1908 cells=1951 best_progress=0.803 steps/s=5779
+[2:6 Intense] t=   60s iter=986 cells=983 best_progress=0.442 steps/s=6156
+[2:7 100%] t=   60s iter=1633 cells=1134 best_progress=0.300 steps/s=7015
+[1:8 Pillar] t=  240s iter=5034 cells=2477 best_progress=0.868 steps/s=8445
+[2:2 Dantes Peak] t=  180s iter=3543 cells=938 best_progress=0.147 steps/s=6353
+[2:3 Abrupt] SOLVED: 1156 steps, 1825 iterations, 144s -> demos/lg2_t3.json
+[1:4 Modesty] t=  271s iter=3108 cells=1807 best_progress=0.896 steps/s=6323
+[2:8 Training day] t=   60s iter=982 cells=1273 best_progress=0.599 steps/s=6612
+[1:9 Trenches] t=  240s iter=3300 cells=1714 best_progress=0.740 steps/s=7420
+[2:4 Undertaker] SOLVED: 437 steps, 2557 iterations, 117s -> demos/lg2_t4.json
+[2:9 Trial again] t=   60s iter=1473 cells=795 best_progress=0.086 steps/s=6108
+[2:6 Intense] t=   90s iter=1355 cells=1313 best_progress=0.802 steps/s=6108
+[2:7 100%] t=   90s iter=2101 cells=1315 best_progress=0.309 steps/s=6830
+[1:8 Pillar] t=  270s iter=5472 cells=2547 best_progress=0.868 steps/s=8406
+[2:2 Dantes Peak] t=  210s iter=4008 cells=1169 best_progress=0.256 steps/s=6320
+[1:4 Modesty] t=  301s iter=3351 cells=1852 best_progress=0.907 steps/s=6298
+[2:8 Training day] t=   90s iter=1270 cells=1395 best_progress=0.605 steps/s=6525
+[1:9 Trenches] t=  271s iter=3618 cells=1797 best_progress=0.744 steps/s=7390
+[2:9 Trial again] t=   90s iter=2188 cells=914 best_progress=0.086 steps/s=6076
+[2:6 Intense] t=  120s iter=1635 cells=1439 best_progress=0.806 steps/s=6062
+[2:7 100%] t=  120s iter=2586 cells=1363 best_progress=0.309 steps/s=6726
+[1:8 Pillar] t=  300s iter=5928 cells=2585 best_progress=0.868 steps/s=8370
+[2:2 Dantes Peak] t=  240s iter=4321 cells=1437 best_progress=0.500 steps/s=6287
+[1:4 Modesty] t=  331s iter=3597 cells=1896 best_progress=0.907 steps/s=6275
+[2:8 Training day] t=  120s iter=1538 cells=1497 best_progress=0.640 steps/s=6478
+[1:9 Trenches] t=  301s iter=3916 cells=1944 best_progress=0.847 steps/s=7364
+[2:9 Trial again] t=  120s iter=2856 cells=1059 best_progress=0.123 steps/s=6064
+[2:6 Intense] t=  150s iter=1908 cells=1537 best_progress=0.806 steps/s=6036
+[2:7 100%] t=  150s iter=3059 cells=1442 best_progress=0.310 steps/s=6666
+[1:8 Pillar] t=  330s iter=6369 cells=2643 best_progress=0.868 steps/s=8341
+[2:2 Dantes Peak] t=  270s iter=4550 cells=1728 best_progress=0.665 steps/s=6255
+[1:4 Modesty] t=  361s iter=3847 cells=1927 best_progress=0.908 steps/s=6257
+[2:8 Training day] t=  150s iter=1770 cells=1621 best_progress=0.810 steps/s=6452
+[1:9 Trenches] t=  331s iter=4193 cells=2035 best_progress=0.852 steps/s=7348
+[2:9 Trial again] t=  150s iter=3437 cells=1125 best_progress=0.130 steps/s=6070
+[2:6 Intense] t=  180s iter=2178 cells=1621 best_progress=0.806 steps/s=6026
+[2:7 100%] t=  180s iter=3528 cells=1488 best_progress=0.310 steps/s=6635
+[1:8 Pillar] t=  360s iter=6826 cells=2677 best_progress=0.868 steps/s=8322
+[2:2 Dantes Peak] t=  301s iter=4771 cells=1811 best_progress=0.665 steps/s=6235
+[1:4 Modesty] t=  391s iter=4088 cells=1971 best_progress=0.908 steps/s=6245
+[2:8 Training day] SOLVED: 1427 steps, 2002 iterations, 181s -> demos/lg2_t8.json
+[1:9 Trenches] t=  361s iter=4454 cells=2127 best_progress=0.946 steps/s=7332
+[2:9 Trial again] t=  180s iter=3975 cells=1283 best_progress=0.295 steps/s=6072
+[2:6 Intense] t=  210s iter=2469 cells=1733 best_progress=0.806 steps/s=6022
+[2:7 100%] t=  210s iter=4009 cells=1526 best_progress=0.310 steps/s=6623
+[1:8 Pillar] t=  390s iter=7282 cells=2721 best_progress=0.868 steps/s=8314
+[2:2 Dantes Peak] t=  331s iter=4993 cells=1965 best_progress=0.811 steps/s=6229
+[1:4 Modesty] t=  421s iter=4334 cells=2000 best_progress=0.908 steps/s=6246
+[1:9 Trenches] t=  391s iter=4715 cells=2152 best_progress=0.946 steps/s=7341
+[2:9 Trial again] t=  210s iter=4351 cells=1731 best_progress=0.487 steps/s=6113
+[2:6 Intense] t=  241s iter=2817 cells=1857 best_progress=0.838 steps/s=6042
+[2:7 100%] t=  240s iter=4501 cells=1561 best_progress=0.310 steps/s=6636
+[2:2 Dantes Peak] t=  361s iter=5185 cells=2197 best_progress=0.847 steps/s=6230
+[1:4 Modesty] t=  451s iter=4597 cells=2028 best_progress=0.908 steps/s=6252
+[1:9 Trenches] t=  421s iter=4991 cells=2192 best_progress=0.946 steps/s=7349
+[2:2 Dantes Peak] SOLVED: 1591 steps, 5280 iterations, 378s -> demos/lg2_t2.json
+[2:6 Intense] t=  271s iter=3245 cells=2042 best_progress=0.838 steps/s=6057
+[2:7 100%] t=  270s iter=5006 cells=1598 best_progress=0.310 steps/s=6649
+[1:4 Modesty] t=  481s iter=4863 cells=2052 best_progress=0.908 steps/s=6257
+[1:9 Trenches] t=  451s iter=5265 cells=2249 best_progress=0.947 steps/s=7356
+[2:6 Intense] t=  301s iter=3688 cells=2145 best_progress=0.847 steps/s=6068
+[2:7 100%] t=  300s iter=5513 cells=1637 best_progress=0.310 steps/s=6658
+[1:4 Modesty] t=  511s iter=5111 cells=2081 best_progress=0.908 steps/s=6260
+[1:9 Trenches] t=  481s iter=5525 cells=2300 best_progress=0.947 steps/s=7361
+[2:6 Intense] SOLVED: 811 steps, 4090 iterations, 329s -> demos/lg2_t6.json
+[2:7 100%] t=  330s iter=6000 cells=1681 best_progress=0.314 steps/s=6660
+[1:4 Modesty] t=  541s iter=5371 cells=2100 best_progress=0.908 steps/s=6263
+[1:9 Trenches] t=  511s iter=5799 cells=2330 best_progress=0.947 steps/s=7367
+[1:9 Trenches] SOLVED: 1272 steps, 5907 iterations, 524s -> demos/lg1_t9.json
+[2:7 100%] t=  360s iter=6485 cells=1709 best_progress=0.315 steps/s=6661
+[1:4 Modesty] t=  571s iter=5621 cells=2111 best_progress=0.908 steps/s=6267
+[2:7 100%] t=  391s iter=6949 cells=1769 best_progress=0.357 steps/s=6661
+[1:4 Modesty] t=  601s iter=5887 cells=2135 best_progress=0.908 steps/s=6267
+[2:7 100%] t=  421s iter=7281 cells=1836 best_progress=0.363 steps/s=6559
+[1:4 Modesty] t=  631s iter=6080 cells=2145 best_progress=0.908 steps/s=6199
+[2:7 100%] t=  451s iter=7589 cells=1870 best_progress=0.369 steps/s=6444
+[1:4 Modesty] t=  662s iter=6288 cells=2157 best_progress=0.908 steps/s=6139
+[1:4 Modesty] SOLVED: 1089 steps, 6345 iterations, 671s -> demos/lg1_t4.json
+[2:7 100%] t=  481s iter=7882 cells=1903 best_progress=0.369 steps/s=6352
+[2:7 100%] t=  511s iter=8206 cells=1929 best_progress=0.382 steps/s=6290
+[2:7 100%] t=  541s iter=8524 cells=1939 best_progress=0.382 steps/s=6237
+[2:7 100%] t=  571s iter=8839 cells=1951 best_progress=0.384 steps/s=6186
+[2:7 100%] t=  601s iter=9115 cells=2099 best_progress=0.477 steps/s=6142
+[2:7 100%] t=  631s iter=9391 cells=2126 best_progress=0.483 steps/s=6107
+[2:7 100%] t=  661s iter=9678 cells=2151 best_progress=0.483 steps/s=6085
+[2:7 100%] t=  691s iter=9966 cells=2164 best_progress=0.483 steps/s=6063
+[2:7 100%] t=  721s iter=10248 cells=2183 best_progress=0.484 steps/s=6035
+[2:7 100%] t=  751s iter=10519 cells=2186 best_progress=0.484 steps/s=6010
+[2:7 100%] t=  782s iter=10806 cells=2192 best_progress=0.484 steps/s=5994
+[2:7 100%] t=  812s iter=11116 cells=2199 best_progress=0.484 steps/s=5987
+[2:7 100%] t=  842s iter=11421 cells=2245 best_progress=0.484 steps/s=5983
+[2:7 100%] t=  872s iter=11725 cells=2268 best_progress=0.484 steps/s=5979
+[2:7 100%] NOT SOLVED in 900s: iter=12021 cells=2279 best_progress=0.487
+[1:8] TIMED OUT (likely native engine hang), killing
+[2:9] TIMED OUT (likely native engine hang), killing
+
+solved 27/30: 0:0 0:1 0:2 0:3 0:4 0:5 0:6 0:7 0:8 0:9 1:0 1:1 1:2 1:3 1:4 1:5 1:6 1:7 1:9 2:0 2:1 2:2 2:3 2:4 2:5 2:6 2:8
+unsolved: 1:8 2:7 2:9

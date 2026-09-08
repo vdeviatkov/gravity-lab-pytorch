@@ -13,7 +13,7 @@ from .config import configured, load_config
 from .control import read_control, request_control, resolve_run
 from .evaluation import evaluate_model
 from .export import export_checkpoint
-from .model import ActorCriticNetwork, DenseQNetwork, select_device
+from .model import build_network, select_device
 from .playback import arcade, play
 from .ppo_trainer import PPOTrainer
 from .sac_trainer import SACREDQTrainer
@@ -134,9 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         saved = load_checkpoint(run / "latest.pt")
         cfg, norm = saved["config"], saved["normalization"]
         device = select_device(cfg["experiment"]["device"])
-        network_class = ActorCriticNetwork if cfg["algorithm"].get("kind", "dqn") == "ppo" else DenseQNetwork
-        model = network_class(cfg["seeds"]["parameter_initialization"], norm["input_scale"], norm["input_bias"],
-                              tuple(cfg["algorithm"]["hidden_sizes"])).to(device)
+        model = build_network(cfg, "actor", normalization=norm).to(device)
         model.load_state_dict(saved["online_network"])
         print(json.dumps(evaluate_model(model, cfg, args.episodes, args.seed, device), indent=2, sort_keys=True))
         return 0

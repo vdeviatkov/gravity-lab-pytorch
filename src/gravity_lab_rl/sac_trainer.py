@@ -21,9 +21,10 @@ from .config import with_experiment_defaults, curriculum_environments, model_inp
 from .control import atomic_write_json, initialize_control, read_control, update_status
 from .evaluation import evaluate_model
 from .export import export_checkpoint, policy_from_model
-from .model import DenseQNetwork, select_device
+from .model import build_network, select_device
+from .demo_curriculum import DemoCurriculum, compute_normalization, demo_transitions
 from .playback import require_integration
-from .replay import ReplayBuffer
+from .replay import ReplayBatch, ReplayBuffer
 from .practice import PracticeBank
 from .recording import begin_recording_session, record_environment
 from .reward import EpisodeReward, RewardConfig
@@ -65,22 +66,28 @@ class SACREDQTrainer:
         torch.set_num_threads(int(config["experiment"].get("torch_num_threads", 1)))
         self.device = select_device(config["experiment"]["device"])
         norm, seeds, algo = config["normalization"], config["seeds"], config["algorithm"]
-        hidden_sizes = tuple(algo["hidden_sizes"])
         init_seed = int(seeds["parameter_initialization"])
         self.ensemble_size = int(algo["ensemble_size"])
         self.subset_size = int(algo["subset_size"])
 
-        self.actor = DenseQNetwork(init_seed, norm["input_scale"], norm["input_bias"],
-                                   hidden_sizes).to(self.device)
+        self.observation_size = model_input_size(self.config)
+        # Demonstrations (searched by scripts/explore_maps.py) drive the backward start curriculum
+        # and a permanent behavior-cloning replay; see demo_curriculum.py. Loaded before the
+        # networks because the observation normalization can be derived from the demo data.
+        self.demos = DemoCurriculum(config.get("demos", {}), curriculum_environments(config),
+                                    int(seeds.get("demo_curriculum", 29)))
+        self.demo_replay: ReplayBuffer | None = None
+        if self.demos.enabled:
+            self._build_demo_replay()
+            norm = self.config["normalization"]
+        self.actor = build_network(self.config, "actor", init_seed).to(self.device)
         # Distinct initialization seeds per ensemble member so the critics start decorrelated --
         # REDQ's variance-reduction benefit depends on the ensemble actually disagreeing early on.
         self.critics = nn.ModuleList([
-            DenseQNetwork(init_seed + 100 + i, norm["input_scale"], norm["input_bias"], hidden_sizes)
-            for i in range(self.ensemble_size)
+            build_network(self.config, "critic", init_seed + 100 + i) for i in range(self.ensemble_size)
         ]).to(self.device)
         self.critic_targets = nn.ModuleList([
-            DenseQNetwork(init_seed + 100 + i, norm["input_scale"], norm["input_bias"], hidden_sizes)
-            for i in range(self.ensemble_size)
+            build_network(self.config, "critic", init_seed + 100 + i) for i in range(self.ensemble_size)
         ]).to(self.device)
         for critic, target in zip(self.critics, self.critic_targets):
             target.load_state_dict(critic.state_dict())
@@ -94,7 +101,6 @@ class SACREDQTrainer:
         self.critics_optimizer = torch.optim.Adam(self.critics.parameters(), lr=algo["critic_learning_rate"])
         self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=algo["alpha_learning_rate"])
 
-        self.observation_size = model_input_size(self.config)
         self.replay = ReplayBuffer(algo["replay_capacity"], seeds["replay_sampling"],
                                    observation_size=self.observation_size)
         # Separate stream from the replay buffer's own sampling RNG so REDQ's per-update target
@@ -118,6 +124,7 @@ class SACREDQTrainer:
         # progress"). A struggling track gets picked far more often, giving it more rehearsal
         # instead of the same fixed share every mastered track gets under round-robin.
         self.curriculum_rng = random.Random(seeds["replay_sampling"])
+        self.sticky_rng = random.Random(seeds["epsilon_exploration"])
         self.track_success_ema: dict[int, float] = {}
         self._episodes_since_switch = 0
         self._current_env_cfg: dict[str, Any] | None = None
@@ -137,6 +144,47 @@ class SACREDQTrainer:
         atomic_write_json(run_dir / "config.json", config)
         atomic_write_json(run_dir / "metadata.json", self.metadata)
         initialize_control(self.control_path, run_dir.name)
+
+    def _open_plain_environment(self, configuration: dict[str, Any]):
+        from gravity_lab import ClassicConfig, ClassicGravityEnv
+
+        classic = ClassicConfig(configuration["level_group"], configuration["track"], configuration["league"],
+                                configuration["frame_skip"], configuration["max_episode_steps"],
+                                self.config["seeds"]["environment"],
+                                configuration.get("obstacle_ray_count", DEFAULT_OBSTACLE_RAY_COUNT))
+        return ClassicGravityEnv(classic, configuration.get("level_pack"))
+
+    def _build_demo_replay(self) -> None:
+        """Replay every demo once into a permanent, per-track-balanced buffer. Rebuilt on resume
+        (deterministic, cheap) rather than checkpointed. Also derives the fixed observation
+        normalization when the config asks for `normalization.kind = "demo_statistics"`."""
+        algo = self.config["algorithm"]
+        transitions = demo_transitions(self.demos.demos, curriculum_environments(self.config),
+                                       RewardConfig.from_config(self.config), int(algo.get("n_step", 1)),
+                                       float(algo["gamma"]), self.observation_size, self._open_plain_environment)
+        if not transitions:
+            raise ValueError("demos are enabled but no demo matched the curriculum; run scripts/explore_maps.py")
+        norm = self.config["normalization"]
+        if norm.get("kind") == "demo_statistics":
+            observations = np.stack([t[0] for t in transitions])
+            scale, bias = compute_normalization(observations, self.actor_track_region()[0], self.actor_track_region()[1])
+            self.config["normalization"] = {"kind": "fixed", "input_scale": scale, "input_bias": bias,
+                                            "source": "demo_statistics"}
+        self.demo_replay = ReplayBuffer(len(transitions), int(self.config["seeds"]["replay_sampling"]) + 2,
+                                        observation_size=self.observation_size)
+        for observation, action, reward, next_observation, terminated, truncated, steps, track_id in transitions:
+            self.demo_replay.add(observation, action, reward, next_observation, terminated, truncated, steps, track_id)
+
+    @staticmethod
+    def actor_track_region() -> tuple[int, int]:
+        from . import ACCELERATION_REGION_END, TRACK_ID_REGION_END
+        return ACCELERATION_REGION_END, TRACK_ID_REGION_END
+
+    def _start_episode(self, env, env_cfg: dict[str, Any], track_id: int):
+        seed = self.config["seeds"]["environment"] + self.completed_episode_count
+        if self.demos.enabled:
+            return self.demos.start(env, env_cfg, track_id, seed)
+        return self.practice.start(env, env_cfg, seed)
 
     def _restore(self, path: Path) -> None:
         saved = load_checkpoint(path, self.device)
@@ -173,6 +221,10 @@ class SACREDQTrainer:
         self.best_elapsed = saved.get('best_elapsed', 0.0)
         if 'practice_bank' in saved:
             self.practice.load_state_dict(saved['practice_bank'])
+        if 'demo_curriculum' in saved and self.demos.enabled:
+            self.demos.load_state_dict(saved['demo_curriculum'])
+        if 'sticky_rng_state' in saved:
+            self.sticky_rng.setstate(saved['sticky_rng_state'])
         self.track_success_ema = saved.get("track_success_ema", {})
         if "curriculum_rng_state" in saved:
             self.curriculum_rng.setstate(saved["curriculum_rng_state"])
@@ -207,7 +259,9 @@ class SACREDQTrainer:
         # least-visited maps, guaranteeing access instead of relying on chance.
         if self.config.get('curriculum', {}).get('guaranteed_coverage', False):
             if self.completed_episode_count % 2 == 0:
-                return min(environments, key=lambda env: self.track_full_start_counts.get(self._track_id(env), 0))
+                demos_enabled = getattr(self, 'demos', None) is not None and self.demos.enabled
+                counts = self.track_episode_counts if demos_enabled else self.track_full_start_counts
+                return min(environments, key=lambda env: counts.get(self._track_id(env), 0))
         weights = [1.0 / (self.track_success_ema.get(self._track_id(env), 0.5) + 0.15)
                   for env in environments]
         focus = set(self.config.get('curriculum', {}).get('focus_tracks', []))
@@ -221,6 +275,7 @@ class SACREDQTrainer:
                'training_episodes_per_track': self.track_episode_counts,
                'full_start_episodes_per_track': self.track_full_start_counts,
                'practice_episodes': self.practice.restored_episodes,
+               'demo_curriculum': self.demos.summary() if self.demos.enabled else None,
                'best_finish_rate_before_evaluation': self.best_score[0] if self.best_score else None,
                'evaluation': evaluation}
         with (self.run_dir / 'evaluation_history.jsonl').open('a') as stream:
@@ -229,6 +284,8 @@ class SACREDQTrainer:
     def _checkpoint_payload(self) -> dict[str, Any]:
         return {
             "practice_bank": self.practice.state_dict(),
+            "demo_curriculum": self.demos.state_dict(),
+            "sticky_rng_state": self.sticky_rng.getstate(),
             "best_elapsed": self.best_elapsed,
             "online_network": self.actor.state_dict(),
             "critics": [critic.state_dict() for critic in self.critics],
@@ -281,6 +338,7 @@ class SACREDQTrainer:
             "track_success_ema": self.track_success_ema,
             "track_episode_counts": self.track_episode_counts,
             "track_full_start_counts": self.track_full_start_counts,
+            "demo_curriculum": self.demos.summary() if self.demos.enabled else None,
         })
 
     def _pause_if_requested(self) -> bool:
@@ -314,6 +372,10 @@ class SACREDQTrainer:
         algo = self.config["algorithm"]
         gamma = float(algo["gamma"])
         batch = self.replay.sample(algo["batch_size"], self.device)
+        demo_batch = None
+        if self.demo_replay is not None and int(self.demos.config["bc_batch_size"]) > 0:
+            demo_batch = self.demo_replay.sample(int(self.demos.config["bc_batch_size"]), self.device)
+            batch = ReplayBatch(*(torch.cat([a, b]) for a, b in zip(batch.__dict__.values(), demo_batch.__dict__.values())))
 
         with torch.no_grad():
             next_logits = self.actor(batch.next_observations)
@@ -342,6 +404,11 @@ class SACREDQTrainer:
         with torch.no_grad():
             q_mean = torch.stack([critic(batch.observations) for critic in self.critics], dim=0).mean(dim=0)
         actor_loss = (probs * (self.log_alpha.exp().detach() * log_probs - q_mean)).sum(dim=-1).mean()
+        if demo_batch is not None and float(self.demos.config["bc_weight"]) > 0.0:
+            # Behavior cloning on the demonstration slice of the batch (it was concatenated last).
+            demo_log_probs = log_probs[-len(demo_batch.actions):]
+            bc_loss = F.nll_loss(demo_log_probs, demo_batch.actions)
+            actor_loss = actor_loss + float(self.demos.config["bc_weight"]) * bc_loss
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), algo["gradient_clip_norm"])
@@ -414,7 +481,7 @@ class SACREDQTrainer:
 
                 env = open_environment(env_cfg)
                 track_name = env.track_name
-                episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                episode_start = self._start_episode(env, env_cfg, track_id)
                 observation = episode_start.observation[:self.observation_size]
                 episode_actions = list(episode_start.actions)
                 practice_prefix_steps = len(episode_actions)
@@ -423,13 +490,21 @@ class SACREDQTrainer:
                 reward_tracker = EpisodeReward(reward_config, peak_progress)
                 episode_reward, episode_length, last_loss = 0.0, 0, None
                 n_step = NStepAccumulator(int(algo.get("n_step", 1)), algo["gamma"])
+                sticky = float(self.demos.config["sticky_action_probability"]) if self.demos.enabled else 0.0
+                previous_action: int | None = None
                 while self.current_active_elapsed() < duration and not self._stop_signal:
                     if self._pause_if_requested():
                         break
-                    with torch.inference_mode():
-                        logits = self.actor(torch.tensor(observation, dtype=torch.float32,
-                                                         device=self.device))
-                        action = int(torch.distributions.Categorical(logits=logits).sample().item())
+                    if previous_action is not None and sticky > 0.0 and self.sticky_rng.random() < sticky:
+                        # Temporally extended exploration: a setup maneuver spans dozens of
+                        # consecutive 0.04 s decisions, which per-step sampling almost never repeats.
+                        action = previous_action
+                    else:
+                        with torch.inference_mode():
+                            logits = self.actor(torch.tensor(observation, dtype=torch.float32,
+                                                             device=self.device))
+                            action = int(torch.distributions.Categorical(logits=logits).sample().item())
+                    previous_action = action
                     step = env.step(action)
                     episode_actions.append(action)
                     self.practice.observe(env_cfg, episode_start.seed, episode_actions, step)
@@ -453,6 +528,7 @@ class SACREDQTrainer:
                         self.latest_metrics = {
                             "episode": self.completed_episode_count, "reward": episode_reward,
                             "practice_prefix_steps": practice_prefix_steps,
+                            "demo_prefix": self.demos.prefix.get(track_id) if self.demos.enabled else None,
                             "peak_progress": peak_progress,
                             "length": episode_length, "progress": float(step.observation[0]),
                             "finished": step.finished, "crashed": step.crashed,
@@ -469,6 +545,8 @@ class SACREDQTrainer:
                         metrics_stream.flush()
                         if not practice_prefix_steps:
                             self._update_track_success(env_cfg, step.finished)
+                        self.demos.record(track_id, practice_prefix_steps, step.finished)
+                        previous_action = None
                         self._episodes_since_switch += 1
                         if self._episodes_since_switch >= episodes_per_track:
                             self._episodes_since_switch = 0
@@ -482,7 +560,7 @@ class SACREDQTrainer:
                                 track_id = self._track_id(env_cfg)
                                 env = open_environment(env_cfg)
                                 track_name = env.track_name
-                        episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                        episode_start = self._start_episode(env, env_cfg, track_id)
                         observation = episode_start.observation[:self.observation_size]
                         episode_actions = list(episode_start.actions)
                         practice_prefix_steps = len(episode_actions)
@@ -538,7 +616,7 @@ class SACREDQTrainer:
                                 if stage_finish >= threshold:
                                     self.unlocked_stages += 1
                         env = open_environment(env_cfg)
-                        episode_start = self.practice.start(env, env_cfg, seeds["environment"] + self.completed_episode_count)
+                        episode_start = self._start_episode(env, env_cfg, track_id)
                         observation = episode_start.observation[:self.observation_size]
                         episode_actions = list(episode_start.actions)
                         practice_prefix_steps = len(episode_actions)
@@ -603,6 +681,7 @@ class SACREDQTrainer:
             "track_full_start_episodes": self.track_full_start_counts,
             "practice_episodes": self.practice.restored_episodes,
             "practice_reconstructed_steps": self.practice.reconstructed_steps,
+            "demo_curriculum": self.demos.summary() if self.demos.enabled else None,
             "best_evaluation": self.best_metrics,
             "paths": {"final_checkpoint": _portable_path(self.run_dir / "final.pt"),
                       "final_policy": _portable_path(self.run_dir / "final.gdp"),

@@ -72,9 +72,24 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ValueError(f"obstacle_ray_count must be in [1, {MAX_OBSTACLE_RAY_COUNT}]")
     algo = config["algorithm"]
     hidden_sizes = list(algo["hidden_sizes"])
-    if len(hidden_sizes) != 2 or any(int(size) <= 0 for size in hidden_sizes):
-        raise ValueError("hidden_sizes must be a list of exactly two positive integers")
+    network = algo.get("network", "dense")
     kind = algo.get("kind", "dqn")
+    if network == "track_conditioned":
+        if kind != "sac_redq":
+            raise ValueError("network track_conditioned currently requires sac_redq")
+        if not 1 <= len(hidden_sizes) <= 4 or any(int(size) <= 0 for size in hidden_sizes):
+            raise ValueError("track_conditioned hidden_sizes must be 1 to 4 positive integers")
+        if len(config["normalization"]["input_scale"]) < TRACK_ID_REGION_END:
+            raise ValueError("track_conditioned network needs an observation width including the track id")
+        excluded = algo.get("excluded_inputs")
+        if excluded is not None and (not isinstance(excluded, list) or any(
+                not isinstance(i, int) or not 0 <= i < OBSERVATION_SIZE for i in excluded)):
+            raise ValueError("excluded_inputs must be a list of observation indices")
+    elif network == "dense":
+        if len(hidden_sizes) != 2 or any(int(size) <= 0 for size in hidden_sizes):
+            raise ValueError("hidden_sizes must be a list of exactly two positive integers")
+    else:
+        raise ValueError(f"unknown network kind: {network!r}")
     if kind == "dqn":
         if int(algo["batch_size"]) <= 0 or int(algo["replay_capacity"]) < int(algo["batch_size"]):
             raise ValueError("invalid replay or batch size")
@@ -153,6 +168,26 @@ def validate_config(config: dict[str, Any]) -> None:
             raise ValueError('practice checkpoint_stride must be positive')
     if curriculum and (curriculum.get('unlock_all') or curriculum.get('guaranteed_coverage')) and kind != 'sac_redq':
         raise ValueError('all-map coverage scheduler currently requires sac_redq')
+    demos = config.get('demos', {})
+    if not isinstance(demos, dict):
+        raise ValueError('demos must be an object')
+    if demos.get('enabled', False):
+        if kind != 'sac_redq':
+            raise ValueError('demos currently require sac_redq')
+        if practice.get('enabled', False):
+            raise ValueError('demos and obstacle practice cannot both be enabled')
+        for field in ('initial_remaining', 'step_back', 'advance_window', 'advance_successes', 'retreat_window',
+                      'bc_batch_size'):
+            if field in demos and (not isinstance(demos[field], int) or demos[field] < 0):
+                raise ValueError(f'demos.{field} must be a nonnegative integer')
+        if not 0 <= float(demos.get('full_start_probability', 0.2)) <= 1:
+            raise ValueError('demos.full_start_probability must be in [0, 1]')
+        if not 0 <= float(demos.get('sticky_action_probability', 0.5)) < 1:
+            raise ValueError('demos.sticky_action_probability must be in [0, 1)')
+        if float(demos.get('bc_weight', 1.0)) < 0:
+            raise ValueError('demos.bc_weight must be nonnegative')
+    if config['normalization'].get('kind') == 'demo_statistics' and not demos.get('enabled', False):
+        raise ValueError('normalization kind demo_statistics requires demos.enabled')
     threads = int(config["experiment"].get("torch_num_threads", 1))
     if threads <= 0:
         raise ValueError("torch_num_threads must be positive")

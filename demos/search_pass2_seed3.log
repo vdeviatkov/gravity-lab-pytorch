@@ -1,0 +1,67 @@
+[1:4 Modesty] t=   30s iter=668 cells=548 best_progress=0.185 steps/s=5140
+[2:7 100%] t=   30s iter=607 cells=629 best_progress=0.096 steps/s=5577
+[2:9 Trial again] t=   30s iter=420 cells=518 best_progress=0.077 steps/s=4847
+[1:8 Pillar] t=   30s iter=446 cells=1171 best_progress=0.627 steps/s=6579
+[1:4 Modesty] t=   60s iter=1215 cells=774 best_progress=0.321 steps/s=5101
+[2:9 Trial again] t=   60s iter=916 cells=630 best_progress=0.084 steps/s=4856
+[2:7 100%] t=   60s iter=1256 cells=759 best_progress=0.099 steps/s=5576
+[1:8 Pillar] t=   60s iter=869 cells=1560 best_progress=0.746 steps/s=6575
+[1:4 Modesty] t=   90s iter=1743 cells=914 best_progress=0.338 steps/s=5177
+[2:7 100%] t=   90s iter=1978 cells=951 best_progress=0.136 steps/s=5674
+[1:8 Pillar] t=   90s iter=1353 cells=1892 best_progress=0.748 steps/s=6692
+[2:9 Trial again] t=   90s iter=1384 cells=845 best_progress=0.085 steps/s=4939
+[1:4 Modesty] t=  120s iter=2154 cells=1405 best_progress=0.648 steps/s=5241
+[1:8 Pillar] t=  120s iter=1856 cells=2172 best_progress=0.753 steps/s=6798
+[2:7 100%] t=  120s iter=2556 cells=1151 best_progress=0.136 steps/s=5733
+[2:9 Trial again] t=  120s iter=1824 cells=1049 best_progress=0.124 steps/s=5010
+[2:7 100%] t=  150s iter=3068 cells=1443 best_progress=0.264 steps/s=5772
+[1:8 Pillar] t=  150s iter=2309 cells=2526 best_progress=0.876 steps/s=6872
+[1:4 Modesty] t=  150s iter=2402 cells=1521 best_progress=0.648 steps/s=5256
+[2:7 100%] t=  180s iter=3456 cells=1735 best_progress=0.311 steps/s=5737
+[1:8 Pillar] t=  180s iter=2699 cells=2721 best_progress=0.877 steps/s=6900
+[1:4 Modesty] t=  180s iter=2653 cells=1636 best_progress=0.657 steps/s=5270
+[1:8 Pillar] t=  210s iter=3113 cells=2933 best_progress=0.877 steps/s=6961
+[1:4 Modesty] t=  210s iter=2933 cells=1728 best_progress=0.660 steps/s=5317
+[2:7 100%] t=  210s iter=3815 cells=1890 best_progress=0.358 steps/s=5724
+[1:4 Modesty] t=  240s iter=3184 cells=1789 best_progress=0.677 steps/s=5364
+[1:8 Pillar] t=  240s iter=3527 cells=3082 best_progress=0.877 steps/s=7031
+[2:7 100%] t=  240s iter=4130 cells=2089 best_progress=0.471 steps/s=5712
+[1:8 Pillar] t=  270s iter=3973 cells=3253 best_progress=0.877 steps/s=7111
+[1:4 Modesty] t=  270s iter=3465 cells=1858 best_progress=0.677 steps/s=5419
+[2:7 100%] t=  270s iter=4446 cells=2212 best_progress=0.472 steps/s=5712
+[1:8 Pillar] t=  300s iter=4422 cells=3380 best_progress=0.879 steps/s=7167
+[1:4 Modesty] t=  301s iter=3727 cells=2000 best_progress=0.685 steps/s=5458
+[2:7 100%] t=  301s iter=4749 cells=2259 best_progress=0.473 steps/s=5707
+[2:7 100%] t=  331s iter=5044 cells=2317 best_progress=0.475 steps/s=5683
+[1:4 Modesty] t=  331s iter=3993 cells=2066 best_progress=0.700 steps/s=5473
+[2:7 100%] t=  361s iter=5334 cells=2417 best_progress=0.475 steps/s=5671
+[1:4 Modesty] t=  361s iter=4227 cells=2287 best_progress=0.899 steps/s=5490
+[2:7 100%] t=  391s iter=5636 cells=2465 best_progress=0.475 steps/s=5674
+[1:4 Modesty] t=  391s iter=4453 cells=2339 best_progress=0.902 steps/s=5520
+[1:4 Modesty] SOLVED: 1161 steps, 4461 iterations, 392s -> demos/lg1_t4.json
+[2:7 100%] t=  421s iter=5937 cells=2503 best_progress=0.475 steps/s=5690
+[2:7 100%] t=  451s iter=6254 cells=2567 best_progress=0.475 steps/s=5707
+[2:7 100%] t=  481s iter=6561 cells=2620 best_progress=0.475 steps/s=5721
+[2:7 100%] t=  511s iter=6897 cells=2679 best_progress=0.481 steps/s=5741
+[2:7 100%] t=  541s iter=7239 cells=2783 best_progress=0.502 steps/s=5767
+[2:7 100%] t=  571s iter=7573 cells=2836 best_progress=0.504 steps/s=5790
+[2:7 100%] t=  601s iter=7892 cells=2889 best_progress=0.504 steps/s=5808
+[2:7 100%] t=  631s iter=8226 cells=2922 best_progress=0.507 steps/s=5826
+[2:7 100%] t=  661s iter=8562 cells=2966 best_progress=0.507 steps/s=5843
+[2:7 100%] t=  691s iter=8900 cells=2990 best_progress=0.507 steps/s=5860
+[2:7 100%] t=  721s iter=9227 cells=3035 best_progress=0.556 steps/s=5874
+[2:7 100%] t=  752s iter=9496 cells=3324 best_progress=0.623 steps/s=5876
+[2:7 100%] t=  782s iter=9724 cells=3381 best_progress=0.632 steps/s=5869
+[2:7 100%] t=  812s iter=9945 cells=3402 best_progress=0.632 steps/s=5861
+[2:7 100%] t=  842s iter=10176 cells=3451 best_progress=0.632 steps/s=5856
+[2:7 100%] t=  872s iter=10406 cells=3482 best_progress=0.635 steps/s=5850
+[2:7 100%] t=  902s iter=10647 cells=3504 best_progress=0.635 steps/s=5846
+[2:7 100%] t=  932s iter=10890 cells=3521 best_progress=0.635 steps/s=5842
+[2:7 100%] t=  962s iter=11118 cells=3538 best_progress=0.635 steps/s=5835
+[2:7 100%] t=  992s iter=11343 cells=3568 best_progress=0.635 steps/s=5828
+[2:7 100%] t= 1022s iter=11591 cells=3588 best_progress=0.635 steps/s=5823
+[2:7 100%] t= 1052s iter=11834 cells=3610 best_progress=0.635 steps/s=5819
+[2:7 100%] t= 1082s iter=12075 cells=3617 best_progress=0.635 steps/s=5815
+[2:7 100%] t= 1113s iter=12323 cells=3635 best_progress=0.635 steps/s=5811
+[2:7 100%] t= 1143s iter=12562 cells=3652 best_progress=0.636 steps/s=5804
+[2:7 100%] t= 1173s iter=12808 cells=3667 best_progress=0.636 steps/s=5800
