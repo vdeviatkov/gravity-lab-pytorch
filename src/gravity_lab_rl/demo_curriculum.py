@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -64,7 +65,7 @@ class DemoCurriculum:
         self.config = {**DEFAULTS, **config}
         self.enabled = bool(self.config["enabled"])
         self.rng = random.Random(seed)
-        self.demos: dict[int, Demo] = load_demos(self.config["directory"], environments) if self.enabled else {}
+        self.demos: dict[int, Demo] = load_demos(self.directory(), environments) if self.enabled else {}
         self.prefix: dict[int, int] = {}
         self.history: dict[int, list[bool]] = {}
         self.advances = 0
@@ -72,6 +73,17 @@ class DemoCurriculum:
         for track_id, demo in self.demos.items():
             self.prefix[track_id] = self.initial_prefix(demo)
             self.history[track_id] = []
+
+    def directory(self) -> Path:
+        """`demos.directory`; a relative path is resolved against the repository root when it does
+        not exist relative to the working directory, so a run transferred to another machine and
+        resumed from any working directory still finds `demos/`."""
+        path = Path(self.config["directory"])
+        if not path.is_absolute() and not path.exists():
+            candidate = Path(__file__).resolve().parents[2] / path
+            if candidate.exists():
+                return candidate
+        return path
 
     def initial_prefix(self, demo: Demo) -> int:
         return max(0, len(demo.actions) - int(self.config["initial_remaining"]))

@@ -262,7 +262,7 @@ since exploration now comes from demos and sticky actions rather than a near-uni
 
 ## 9. Results so far
 
-Run `demo_curriculum_noid_20260907_175241`, still in progress at the time of writing:
+Run `demo_curriculum_noid_20260907_175241`, stopped at 160 minutes to move it to another machine (see section 10); resume it to continue:
 
 | Active training | Best full-start evaluation | Graduated maps | Walk-back done |
 |---|---|---|---|
@@ -270,7 +270,32 @@ Run `demo_curriculum_noid_20260907_175241`, still in progress at the time of wri
 | 60 min | 7 / 30 | 3 | 34% |
 | 90 min | 10 / 30 | 3 | 41% |
 | 110 min | 13 / 30, mean progress 0.590 | 3 | 46% |
+| 160 min (stopped for transfer) | best 13 / 30, final 13 / 30 at mean progress 0.659 | 5 | 55% |
 
 The 13 maps at 110 minutes included Deep, Hole, Savvy, Floorboards and Undertaker, none of
 which any previous shared network had finished. Every prior approach in this repository
 plateaued at 9 of 30. See `docs/training-runs.md` for the running log.
+
+## 10. Moving a run to another machine
+
+A run resumes from `artifacts/<run_id>/latest.pt` plus the small JSON files next to it; the
+replay buffer, demo curriculum state, normalization and config are all inside the checkpoint,
+and the demo replay is rebuilt from `demos/` at start. To transfer:
+
+```sh
+# on the source machine (excludes videos, timelapse snapshots and the redundant best/final .pt)
+cd artifacts && tar -czf ../<run_id>.tar.gz --exclude='*.mp4' --exclude='*.png' --exclude='*.svg' \
+    --exclude='timelapse' --exclude='best.pt' --exclude='final.pt' <run_id>
+
+# on the target machine
+git clone --recurse-submodules <repo> && cd gravity-lab-pytorch && ./scripts/bootstrap.sh   # or bootstrap.cmd
+tar -xzf <run_id>.tar.gz -C artifacts/
+.venv/bin/python scripts/train_watchdog.py --run-id <run_id> --duration-seconds 28800 --device cpu --stall-timeout 180
+```
+
+`--duration-seconds` is the cumulative active-training target (the checkpoint already carries
+the time trained so far). `control.json` inside the archive must say `"requested": "run"`; a
+run that was stopped with `control stop` has `"stop"` there, and the packing step above
+assumes it was reset. Checkpoints are plain `torch.save` files and work across macOS, Linux
+and Windows; the demo directory is resolved against the repository root, so the working
+directory does not matter.
