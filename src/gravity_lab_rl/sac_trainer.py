@@ -22,6 +22,7 @@ from .control import atomic_write_json, initialize_control, read_control, update
 from .evaluation import evaluate_model
 from .export import export_checkpoint, policy_from_model
 from .model import build_network, select_device
+from .tensorboard_log import TrainingLogger
 from .demo_curriculum import DemoCurriculum, compute_normalization, demo_transitions
 from .playback import require_integration
 from .replay import ReplayBatch, ReplayBuffer
@@ -129,6 +130,8 @@ class SACREDQTrainer:
         self._episodes_since_switch = 0
         self._current_env_cfg: dict[str, Any] | None = None
         self.latest_metrics: dict[str, Any] = {}
+        self.update_stats: dict[str, torch.Tensor] = {}
+        self.tensorboard = TrainingLogger(run_dir, config, enabled=False)
         self.resume_checkpoint = resume_checkpoint
         self.metadata = make_metadata(config, self.device)
         self.metadata["torch_num_threads"] = torch.get_num_threads()
@@ -409,6 +412,9 @@ class SACREDQTrainer:
             demo_log_probs = log_probs[-len(demo_batch.actions):]
             bc_loss = F.nll_loss(demo_log_probs, demo_batch.actions)
             actor_loss = actor_loss + float(self.demos.config["bc_weight"]) * bc_loss
+            self.update_stats["bc_loss"] = bc_loss.detach()
+            self.update_stats["bc_accuracy"] = (
+                demo_log_probs.detach().argmax(dim=-1) == demo_batch.actions).float().mean()
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), algo["gradient_clip_norm"])
@@ -427,6 +433,13 @@ class SACREDQTrainer:
                     target_param.mul_(1.0 - tau).add_(param, alpha=tau)
 
         self.optimizer_update_count += 1
+        # Kept as tensors so logging only synchronizes with the device when it writes.
+        self.update_stats.update({
+            "critic_loss": critic_loss.detach(), "actor_loss": actor_loss.detach(),
+            "alpha": self.log_alpha.detach().exp(), "entropy": entropy.mean(),
+            "q_best_action": q_mean.max(dim=-1).values.mean(), "target_mean": target.mean(),
+        })
+        self.tensorboard.updates(self.transition_count, self.optimizer_update_count, self.update_stats)
         return float(critic_loss.detach().cpu())
 
     def _optimize(self) -> float:
@@ -449,6 +462,7 @@ class SACREDQTrainer:
         algo, seeds = self.config["algorithm"], self.config["seeds"]
         duration = float(self.config["experiment"]["duration_seconds"])
         metrics_path = self.run_dir / "metrics.jsonl"
+        self.tensorboard = TrainingLogger(self.run_dir, self.config)
         begin_recording_session(self.run_dir, self.config, self.transition_count, self.active_elapsed)
         old_handlers: dict[int, Any] = {}
 
@@ -549,6 +563,7 @@ class SACREDQTrainer:
                         }
                         metrics_stream.write(json.dumps(self.latest_metrics, sort_keys=True) + "\n")
                         metrics_stream.flush()
+                        self.tensorboard.episode(self.transition_count, self.latest_metrics)
                         if not practice_prefix_steps:
                             self._update_track_success(env_cfg, step.finished)
                         self.demos.record(track_id, practice_prefix_steps, step.finished,
@@ -581,6 +596,9 @@ class SACREDQTrainer:
                                                     "current_progress": float(observation[0])})
                         self._status("running")
                         self._last_status_wall = now
+                        self.tensorboard.curriculum(self.transition_count, self.current_active_elapsed(),
+                                                    self.optimizer_update_count,
+                                                    self.demos.summary() if self.demos.enabled else None)
                     if (self.current_active_elapsed() - self._last_checkpoint_active >=
                             self.config["experiment"]["checkpoint_interval_seconds"]):
                         self.save()
@@ -610,6 +628,11 @@ class SACREDQTrainer:
                             self.best_metrics = eval_result
                             save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
                             export_checkpoint(self.run_dir / "best.pt", self.run_dir / "best.gdp")
+                        self.tensorboard.evaluation(self.transition_count, eval_result, self.best_score)
+                        self.tensorboard.curriculum(self.transition_count, self.current_active_elapsed(),
+                                                    self.optimizer_update_count,
+                                                    self.demos.summary() if self.demos.enabled else None,
+                                                    force=True)
                         curriculum = self.config.get("curriculum")
                         if curriculum and curriculum.get("enabled", False):
                             stages = curriculum["stages"]
@@ -661,6 +684,8 @@ class SACREDQTrainer:
                     print(f"warning: could not preserve checkpoint after error: {save_error}", file=sys.stderr)
             for signum, handler in old_handlers.items():
                 signal.signal(signum, handler)
+            if failure is not None:
+                self.tensorboard.close()
         if failure is not None:
             raise failure
 
@@ -673,6 +698,8 @@ class SACREDQTrainer:
             self.best_metrics = evaluation
             save_checkpoint(self.run_dir / "best.pt", self._checkpoint_payload())
             export_checkpoint(self.run_dir / "best.pt", self.run_dir / "best.gdp")
+        self.tensorboard.evaluation(self.transition_count, evaluation, self.best_score)
+        self.tensorboard.close()
         summary = {
             "format": "gravity-lab-rl-summary-v1", "run_id": self.run_dir.name,
             "reason": graceful_reason, "training_start_timestamp": self.metadata["training_start_timestamp"],
