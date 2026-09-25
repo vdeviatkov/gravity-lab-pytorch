@@ -36,6 +36,7 @@ tracks), deterministic (ε=0), seed `2000007` — the same protocol every run be
 | 24 | SAC + REDQ, run #22 config + `finish_bonus` 10.0→50.0 only (`gamma` back at 0.99), all-tracks | 134 | `configs/classic_all_tracks_sac.json` (fresh start) | 1,812.3s (~30min; ran to its full duration target, natural stop) | 570.9k | 26.7% (8/30) best (reached by ~t=1452s) / 16.7% (5/30) final | 0.392 best / 0.405 final (last-150 mean) | complete — see "Isolating finish_bonus from run #23's regression" below | `artifacts/sac_redq_finishbonus_only_20260906_021909/best.gdp` (not promoted, did not beat run #22) |
 | 25 | SAC + REDQ, 8-hour coverage run (`sac_redq_8hr_coverage_20260906_022918`), all-tracks | 134 | `configs/classic_all_tracks_sac.json`, cumulative `duration_seconds` raised to 32,400 (9h) mid-lifecycle across several resumes, migrated from macOS to a Windows machine partway through | 30,284.95s (~8.41h; resumed repeatedly over multiple sessions, eventually ran to its raised duration target, natural stop) | 4.08M | 26.7% (8/30) best (mean progress 0.468 at that checkpoint) / 16.7% (5/30) final | 0.468 best / 0.388 final | complete — did not beat run #22's 9/30 ceiling; see "Cross-platform migration: SAC 8-hour run on Windows" below for the porting bugs this run surfaced | `saved_runs/sac_redq_8hr_coverage_20260906_022918/best.gdp` (archived, not promoted) |
 | 26 | PPO, adaptive-curriculum 9-hour extension (`parallel_ppo_20260906`), all-tracks | 102 | embedded run config (v2/v3-lineage architecture, no head-clearance sensor region; inverse-success-weighted curriculum, `entropy_coef 0.03`), cumulative `duration_seconds` target 33,752.4s (~9.38h from a pre-existing partial checkpoint) | 23,590.4s active as of this snapshot (~70% of target; **still in progress, not a final result**) | 53.08M (132,012 episodes) | 43.3% (13/30) best so far, mean progress 0.681 | 0.681 (best so far) | **in progress** — already the best result in this entire log, ahead of every prior run's ~26.7-30.0% (8-9/30) ceiling documented in "Session synthesis"; see "Cross-platform migration" below for the watchdog bug this run exposed | `policies/classic_ppo_parallel_20260906_interim.gdp` (interim snapshot, will be superseded when the run finishes) |
+| 27 | SAC + REDQ, Go-Explore demos + backward start curriculum + BC, no map identity (`demo_curriculum_noid_20260907_175241`), all-tracks | 89 used of 134 | `configs/classic_all_tracks_demo_noid.json` | 17,079s (9,629s CPU on macOS, then 7,450s CUDA on Linux; stopped by user) | 2.10M | **50.0% (15/30) best** at 11,107s / 36.7% (11/30) final | 0.631 best / 0.584 final | complete -- **stopped**, best result in this log; 15/30 maps graduated from the demo curriculum, 71% of demo steps walked back; see "Demo curriculum outcome (run #27)" below | `policies/classic_demo_curriculum_noid.gdp` |
 
 ## Notes
 
@@ -1187,3 +1188,31 @@ generalization cost. Three maps had no demo at launch (Pillar 1:8, "100%" 2:7, "
 2:9; the search's workers hang in the native engine on the latter two) and train from the
 normal start; adding a demo file later and resuming the run picks it up, since the demo replay
 and takeover points are rebuilt from `demos/` at every start.
+
+### Demo curriculum outcome (run #27)
+
+Run `demo_curriculum_noid_20260907_175241` trained 160 min on macOS CPU (about 80 steps/s,
+13/30 best, 5 maps graduated), was moved to a Linux machine with an RTX 5080
+(`docs/demo-curriculum.md` section 10) and resumed with `--device cuda`, which ran at about
+183 steps/s because the per-step SAC+REDQ update, not the simulator, is the bottleneck (update
+microbenchmark: 63/s on 4 CPU threads, 104/s on 8, 330/s on CUDA). All 30 macOS-found demos
+replayed to the finish on the Linux build unchanged. After 2h04m on CUDA the user stopped it:
+
+| Active training | Best evaluation | Graduated | Walk-back |
+|---|---|---|---|
+| 9,629 s (end of macOS part) | 13 / 30 | 5 | 55% |
+| 11,107 s | **15 / 30**, mean progress 0.631 | 10 | 64% |
+| 12,906 s | 15 / 30 (latest 13) | 14 | 67% |
+| 17,079 s (stopped) | 15 / 30 (final 11) | 15 | 71% |
+
+Best = `policies/classic_demo_curriculum_noid.gdp`, re-verified from the exported file with
+`DenseQPolicy` on all 30 maps: finishes Intro, Shorty, Crackle, Knolls, Deep, Cliff, Hole,
+Original, Savvy, Indoor, Downhill, Modesty, Bumps, Undertaker and Intense.
+
+The curriculum kept advancing, but full-start evaluations flickered between 10 and 15 maps with
+a different set each time, and graduated maps dropped out (Hole, Spikeholes, Knolls, Savvy came
+and went): retention, not exploration, is the remaining limit. Candidate next steps: parallel
+environment workers feeding the GPU learner, episode allocation by remaining walk-back with a
+floor for graduated maps, random takeover points between the current point and the finish, an
+adaptive `step_back`, self-imitation replacing demo suffixes with the policy's own finishes, and
+a lower BC weight on graduated maps.

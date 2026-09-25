@@ -218,6 +218,20 @@ scripts/launch_run.py --config configs/classic_all_tracks_demo_noid.json --run-i
 ./scripts/control.sh status --run-id my_run
 ```
 
+Every run writes TensorBoard logs to `artifacts/<run_id>/tensorboard` (`src/gravity_lab_rl/tensorboard_log.py`;
+`experiment.tensorboard: false` turns it off, and it is skipped silently without the `tensorboard`
+extra): full-start evaluations overall and per map, curriculum walk-back and graduations, episode
+statistics split into greedy demo-start, exploring demo-start and full-start episodes, losses,
+BC accuracy, entropy, and throughput. The step axis is the transition count, so a resumed run
+continues its curves. On a remote training machine:
+
+```sh
+# on the training machine
+.venv/bin/tensorboard --logdir artifacts --host 127.0.0.1 --port 6006
+# on your own machine, then open http://localhost:6006
+ssh -fN -o ServerAliveInterval=30 -L 6006:127.0.0.1:6006 <training-host>
+```
+
 Demos are reloaded from `demos/` every time the run starts, so a demo added later is picked up
 by stopping and resuming. `resume` reads the config from `latest.pt`, not from the config file;
 to change a setting on an existing run, stop it, patch `checkpoint["config"]` in `latest.pt`
@@ -271,6 +285,8 @@ Run `demo_curriculum_noid_20260907_175241`, stopped at 160 minutes to move it to
 | 90 min | 10 / 30 | 3 | 41% |
 | 110 min | 13 / 30, mean progress 0.590 | 3 | 46% |
 | 160 min (stopped for transfer) | best 13 / 30, final 13 / 30 at mean progress 0.659 | 5 | 55% |
+| 185 min (resumed on CUDA) | **15 / 30**, mean progress 0.631 (best, deployed as `policies/classic_demo_curriculum_noid.gdp`) | 10 | 64% |
+| 285 min (stopped by user) | best 15 / 30, final 11 / 30 at mean progress 0.584 | 15 | 71% |
 
 The 13 maps at 110 minutes included Deep, Hole, Savvy, Floorboards and Undertaker, none of
 which any previous shared network had finished. Every prior approach in this repository
